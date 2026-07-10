@@ -73,33 +73,33 @@ function Home({ onStart }: { onStart: (m: Mode) => void }) {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border-brutal bg-card p-6 shadow-brutal-lg sm:p-10">
-        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[var(--hot)] opacity-90" />
-        <div className="absolute -bottom-10 -left-6 h-32 w-32 rotate-12 rounded-2xl bg-[var(--mint)]" />
+      <section className="relative overflow-hidden rounded-3xl border-brutal bg-card p-5 shadow-brutal-lg sm:p-10">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[var(--hot)] opacity-90 sm:h-40 sm:w-40" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rotate-12 rounded-2xl bg-[var(--mint)] sm:h-32 sm:w-32" />
         <div className="relative">
-          <span className="inline-block rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-xs font-extrabold uppercase tracking-widest shadow-brutal-sm">
+          <span className="inline-block rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest shadow-brutal-sm sm:text-xs">
             🕹️ New Game
           </span>
-          <h2 className="mt-4 text-4xl font-extrabold leading-[0.95] sm:text-6xl">
+          <h2 className="mt-4 text-3xl font-extrabold leading-[0.95] sm:text-6xl">
             Vocab seekho <br />
             <span className="bg-[var(--hot)] px-2 text-white">masti</span> ke saath.
           </h2>
-          <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
+          <p className="mt-4 max-w-xl text-sm text-muted-foreground sm:text-lg">
             English + Hindi + Hinglish meanings, funny examples, synonyms,
             antonyms and{" "}
             <span className="font-bold text-foreground">PYQ tags</span> from SSC
             CGL, SBI &amp; IBPS. Ek shabd bhi bore nahi hoga.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
             <button
               onClick={() => onStart("flash")}
-              className="rounded-2xl border-brutal bg-[var(--hot)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm"
+              className="w-full rounded-2xl border-brutal bg-[var(--hot)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
             >
               🎴 Flashcard Mode
             </button>
             <button
               onClick={() => onStart("quiz")}
-              className="rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm"
+              className="w-full rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
             >
               ⚔️ Quiz Battle
             </button>
