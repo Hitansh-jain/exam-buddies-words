@@ -507,6 +507,11 @@ function Quiz({ onExit }: { onExit: () => void }) {
               PYQ • {q.word.pyq}
             </span>
           )}
+          {q.word.source && (
+            <span className="rounded-full border-brutal bg-[var(--cool)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm">
+              📖 {q.word.source}
+            </span>
+          )}
         </div>
         <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
           {promptText}
