@@ -263,7 +263,7 @@ function FrontCard({ word, onFlip }: { word: Word; onFlip: () => void }) {
       <p className="mt-8 font-mono text-xs uppercase tracking-widest text-muted-foreground">
         Tap to flip
       </p>
-      <h2 className="mt-2 font-display text-5xl font-extrabold leading-none sm:text-7xl">
+      <h2 className="mt-2 break-words font-display text-4xl font-extrabold leading-none sm:text-7xl">
         {word.word}
       </h2>
       <p className="mt-3 font-mono text-sm text-muted-foreground">
