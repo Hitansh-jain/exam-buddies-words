@@ -255,6 +255,11 @@ function FrontCard({ word, onFlip }: { word: Word; onFlip: () => void }) {
             PYQ • {word.pyq}
           </span>
         )}
+        {word.source && (
+          <span className="rounded-full border-brutal bg-[var(--cool)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm">
+            📖 {word.source}
+          </span>
+        )}
         <span className="rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm">
           {word.pos}
         </span>
@@ -500,6 +505,11 @@ function Quiz({ onExit }: { onExit: () => void }) {
           {q.word.pyq && (
             <span className="rounded-full border-brutal bg-[var(--hot)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm">
               PYQ • {q.word.pyq}
+            </span>
+          )}
+          {q.word.source && (
+            <span className="rounded-full border-brutal bg-[var(--cool)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm">
+              📖 {q.word.source}
             </span>
           )}
         </div>
