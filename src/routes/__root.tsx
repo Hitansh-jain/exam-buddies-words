@@ -88,10 +88,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Flashcards + quiz battles to master SSC CGL / Bank vocab. English • Hindi • Hinglish. Fun aur fast.",
+          "Learn SSC CGL & Bank exam vocabulary through fun flashcards and synonym/antonym quiz battles. English, Hindi and Hinglish meanings with examples and PYQ tags.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Shabd Arena — Vocab Game for SSC CGL & Bank Exams" },
+      { name: "twitter:description", content: "Learn SSC CGL & Bank exam vocabulary through fun flashcards and synonym/antonym quiz battles. English, Hindi and Hinglish meanings with examples and PYQ tags." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/df670dee-a017-4b17-811e-f6bee75e55f2/id-preview-20894df1--866530a6-2e9c-44ba-9f7d-a0105bcacc58.lovable.app-1783690849478.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/df670dee-a017-4b17-811e-f6bee75e55f2/id-preview-20894df1--866530a6-2e9c-44ba-9f7d-a0105bcacc58.lovable.app-1783690849478.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
