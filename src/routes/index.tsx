@@ -37,21 +37,21 @@ function Arena() {
 function Header() {
   return (
     <header className="border-brutal border-b-[3px] bg-[var(--lemon)]">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl border-brutal bg-[var(--hot)] text-[var(--lemon)] shadow-brutal-sm font-display text-xl font-extrabold">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-brutal bg-[var(--hot)] text-[var(--lemon)] shadow-brutal-sm font-display text-xl font-extrabold">
             श
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold leading-none sm:text-2xl">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-extrabold leading-none sm:text-2xl">
               Shabd Arena
             </h1>
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+            <p className="truncate text-[10px] font-medium uppercase tracking-widest text-muted-foreground sm:text-[11px]">
               Vocab game • SSC CGL • Bank
             </p>
           </div>
         </div>
-        <span className="hidden rounded-full border-brutal bg-[var(--mint)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm sm:inline-block">
+        <span className="hidden shrink-0 rounded-full border-brutal bg-[var(--mint)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm sm:inline-block">
           Level up your English 🎯
         </span>
       </div>
@@ -73,33 +73,33 @@ function Home({ onStart }: { onStart: (m: Mode) => void }) {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border-brutal bg-card p-6 shadow-brutal-lg sm:p-10">
-        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[var(--hot)] opacity-90" />
-        <div className="absolute -bottom-10 -left-6 h-32 w-32 rotate-12 rounded-2xl bg-[var(--mint)]" />
+      <section className="relative overflow-hidden rounded-3xl border-brutal bg-card p-5 shadow-brutal-lg sm:p-10">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[var(--hot)] opacity-90 sm:h-40 sm:w-40" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rotate-12 rounded-2xl bg-[var(--mint)] sm:h-32 sm:w-32" />
         <div className="relative">
-          <span className="inline-block rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-xs font-extrabold uppercase tracking-widest shadow-brutal-sm">
+          <span className="inline-block rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest shadow-brutal-sm sm:text-xs">
             🕹️ New Game
           </span>
-          <h2 className="mt-4 text-4xl font-extrabold leading-[0.95] sm:text-6xl">
+          <h2 className="mt-4 text-3xl font-extrabold leading-[0.95] sm:text-6xl">
             Vocab seekho <br />
             <span className="bg-[var(--hot)] px-2 text-white">masti</span> ke saath.
           </h2>
-          <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
+          <p className="mt-4 max-w-xl text-sm text-muted-foreground sm:text-lg">
             English + Hindi + Hinglish meanings, funny examples, synonyms,
             antonyms and{" "}
             <span className="font-bold text-foreground">PYQ tags</span> from SSC
             CGL, SBI &amp; IBPS. Ek shabd bhi bore nahi hoga.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
             <button
               onClick={() => onStart("flash")}
-              className="rounded-2xl border-brutal bg-[var(--hot)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm"
+              className="w-full rounded-2xl border-brutal bg-[var(--hot)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
             >
               🎴 Flashcard Mode
             </button>
             <button
               onClick={() => onStart("quiz")}
-              className="rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm"
+              className="w-full rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
             >
               ⚔️ Quiz Battle
             </button>
@@ -263,7 +263,7 @@ function FrontCard({ word, onFlip }: { word: Word; onFlip: () => void }) {
       <p className="mt-8 font-mono text-xs uppercase tracking-widest text-muted-foreground">
         Tap to flip
       </p>
-      <h2 className="mt-2 font-display text-5xl font-extrabold leading-none sm:text-7xl">
+      <h2 className="mt-2 break-words font-display text-4xl font-extrabold leading-none sm:text-7xl">
         {word.word}
       </h2>
       <p className="mt-3 font-mono text-sm text-muted-foreground">
@@ -506,7 +506,7 @@ function Quiz({ onExit }: { onExit: () => void }) {
         <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
           {promptText}
         </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold sm:text-5xl">
+        <h2 className="mt-2 break-words font-display text-3xl font-extrabold sm:text-5xl">
           {q.word.word}
         </h2>
         <p className="font-mono text-xs text-muted-foreground">/{q.word.pronounce}/</p>
@@ -596,16 +596,16 @@ function TopBar({
   onExit: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="min-w-0">
+        <h2 className="truncate font-display text-xl font-extrabold sm:text-3xl">
           {title}
         </h2>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+        <p className="truncate text-xs text-muted-foreground sm:text-sm">{subtitle}</p>
       </div>
       <button
         onClick={onExit}
-        className="rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
+        className="shrink-0 rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
       >
         ✕ Exit
       </button>
