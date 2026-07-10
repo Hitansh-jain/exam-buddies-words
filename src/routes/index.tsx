@@ -37,21 +37,21 @@ function Arena() {
 function Header() {
   return (
     <header className="border-brutal border-b-[3px] bg-[var(--lemon)]">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl border-brutal bg-[var(--hot)] text-[var(--lemon)] shadow-brutal-sm font-display text-xl font-extrabold">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-brutal bg-[var(--hot)] text-[var(--lemon)] shadow-brutal-sm font-display text-xl font-extrabold">
             श
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold leading-none sm:text-2xl">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-extrabold leading-none sm:text-2xl">
               Shabd Arena
             </h1>
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+            <p className="truncate text-[10px] font-medium uppercase tracking-widest text-muted-foreground sm:text-[11px]">
               Vocab game • SSC CGL • Bank
             </p>
           </div>
         </div>
-        <span className="hidden rounded-full border-brutal bg-[var(--mint)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm sm:inline-block">
+        <span className="hidden shrink-0 rounded-full border-brutal bg-[var(--mint)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm sm:inline-block">
           Level up your English 🎯
         </span>
       </div>
