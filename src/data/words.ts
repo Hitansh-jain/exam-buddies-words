@@ -10,6 +10,7 @@ export type Word = {
   synonyms: string[];
   antonyms: string[];
   pyq?: string; // previous year question tag e.g. "SSC CGL 2022"
+  source?: string; // book/source tag e.g. "Word Power Made Easy"
 };
 
 // Curated high-frequency PYQ vocab for SSC CGL / Bank exams
