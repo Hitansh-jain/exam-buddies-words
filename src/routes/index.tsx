@@ -596,16 +596,16 @@ function TopBar({
   onExit: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="min-w-0">
+        <h2 className="truncate font-display text-xl font-extrabold sm:text-3xl">
           {title}
         </h2>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+        <p className="truncate text-xs text-muted-foreground sm:text-sm">{subtitle}</p>
       </div>
       <button
         onClick={onExit}
-        className="rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
+        className="shrink-0 rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
       >
         ✕ Exit
       </button>
