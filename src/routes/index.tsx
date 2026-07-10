@@ -506,7 +506,7 @@ function Quiz({ onExit }: { onExit: () => void }) {
         <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
           {promptText}
         </p>
-        <h2 className="mt-2 font-display text-4xl font-extrabold sm:text-5xl">
+        <h2 className="mt-2 break-words font-display text-3xl font-extrabold sm:text-5xl">
           {q.word.word}
         </h2>
         <p className="font-mono text-xs text-muted-foreground">/{q.word.pronounce}/</p>
