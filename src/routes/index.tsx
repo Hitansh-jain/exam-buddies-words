@@ -742,3 +742,80 @@ function TopBar({
     </div>
   );
 }
+
+/* ============================== REVISE ============================== */
+
+function Revise({
+  onExit,
+  learnedIds,
+  onRemove,
+}: {
+  onExit: () => void;
+  learnedIds: number[];
+  onRemove: (id: number) => void;
+}) {
+  const learnedWords = useMemo(
+    () =>
+      learnedIds
+        .map((id) => WORDS.find((w) => w.id === id))
+        .filter((w): w is Word => Boolean(w)),
+    [learnedIds],
+  );
+
+  return (
+    <div className="space-y-6">
+      <TopBar
+        title="Revise Zone"
+        subtitle={`${learnedWords.length} learned word${learnedWords.length === 1 ? "" : "s"} • Dohrao aur pakka karo`}
+        onExit={onExit}
+      />
+
+      {learnedWords.length === 0 ? (
+        <div className="rounded-3xl border-brutal bg-card p-8 text-center shadow-brutal-lg">
+          <div className="text-6xl">📭</div>
+          <h3 className="mt-4 font-display text-2xl font-extrabold">
+            Abhi tak koi word learn nahi kiya
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Flashcards mein "✅ Aata hai" dabao, wo words yahan revise ke liye
+            aa jayenge.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {learnedWords.map((w) => (
+            <div
+              key={w.id}
+              className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-display text-xl font-extrabold">
+                    {w.word}
+                  </p>
+                  <p className="font-mono text-[10px] text-muted-foreground">
+                    /{w.pronounce}/
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  {w.pos}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{w.english}</p>
+              <p className="mt-1 text-sm font-semibold">{w.hindi}</p>
+              <p className="mt-1 text-sm italic opacity-80">{w.hinglish}</p>
+              <p className="mt-2 text-xs italic">"{w.example}"</p>
+              <button
+                onClick={() => onRemove(w.id)}
+                className="mt-3 rounded-xl border-brutal bg-[var(--hot)] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm"
+              >
+                ↺ Learn again
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
