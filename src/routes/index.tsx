@@ -184,6 +184,15 @@ function Home({
             >
               ⚔️ Quiz Battle
             </button>
+            <button
+              onClick={() => onStart("revise")}
+              className="w-full rounded-2xl border-brutal bg-[var(--mint)] px-6 py-3 text-base font-extrabold shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
+            >
+              📚 Revise ({learnedCount})
+            </button>
+            >
+              ⚔️ Quiz Battle
+            </button>
           </div>
         </div>
       </section>
