@@ -143,7 +143,14 @@ function Footer() {
 
 /* ============================== HOME ============================== */
 
-function Home({ onStart }: { onStart: (m: Mode) => void }) {
+function Home({
+  onStart,
+  learnedCount,
+}: {
+  onStart: (m: Mode) => void;
+  learnedCount: number;
+}) {
+  const dailyWords = useMemo(() => getDailyWords(WORDS, 6), []);
   return (
     <div className="space-y-10">
       {/* Hero */}
