@@ -47,7 +47,7 @@ export const Route = createFileRoute("/")({
   component: Arena,
 });
 
-type Mode = "home" | "flash" | "quiz";
+type Mode = "home" | "flash" | "quiz" | "revise";
 type QuizKind = "synonym" | "antonym" | "meaning";
 
 function shuffle<T>(arr: T[]): T[] {
