@@ -61,14 +61,47 @@ function shuffle<T>(arr: T[]): T[] {
 
 function Arena() {
   const [mode, setMode] = useState<Mode>("home");
+  const [learned, setLearned] = useState<number[]>([]);
+
+  useEffect(() => {
+    setLearned(loadLearned());
+  }, []);
+
+  function markLearned(id: number) {
+    setLearned((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      saveLearned(next);
+      return next;
+    });
+  }
+
+  function removeLearned(id: number) {
+    setLearned((prev) => {
+      const next = prev.filter((x) => x !== id);
+      saveLearned(next);
+      return next;
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground bg-grid">
       <Header />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-        {mode === "home" && <Home onStart={setMode} />}
-        {mode === "flash" && <Flashcards onExit={() => setMode("home")} />}
+        {mode === "home" && (
+          <Home onStart={setMode} learnedCount={learned.length} />
+        )}
+        {mode === "flash" && (
+          <Flashcards onExit={() => setMode("home")} onLearn={markLearned} />
+        )}
         {mode === "quiz" && <Quiz onExit={() => setMode("home")} />}
+        {mode === "revise" && (
+          <Revise
+            onExit={() => setMode("home")}
+            learnedIds={learned}
+            onRemove={removeLearned}
+          />
+        )}
       </main>
       <Footer />
     </div>
