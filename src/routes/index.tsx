@@ -216,18 +216,23 @@ function Home({
         />
       </section>
 
-      {/* Word pack preview */}
+      {/* Daily word pack — refreshes every 24 hours */}
       <section>
-        <div className="mb-4 flex items-end justify-between">
-          <h3 className="text-2xl font-extrabold sm:text-3xl">
-            Aaj ka word pack 📦
-          </h3>
-          <span className="text-sm text-muted-foreground">
-            {WORDS.length} words loaded
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h3 className="text-2xl font-extrabold sm:text-3xl">
+              Aaj ka word pack 📦
+            </h3>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              🔁 Daily refresh • Naye words in <CountdownToMidnight />
+            </p>
+          </div>
+          <span className="rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm">
+            {dailyWords.length} of {WORDS.length}
           </span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {WORDS.slice(0, 6).map((w) => (
+          {dailyWords.map((w) => (
             <div
               key={w.id}
               className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm transition-transform hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
@@ -246,6 +251,25 @@ function Home({
       </section>
     </div>
   );
+}
+
+function CountdownToMidnight() {
+  const [text, setText] = useState("24h");
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 0, 0);
+      const ms = next.getTime() - now.getTime();
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      setText(`${h}h ${m}m`);
+    }
+    tick();
+    const id = window.setInterval(tick, 30000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <span>{text}</span>;
 }
 
 function FeatureCard({
