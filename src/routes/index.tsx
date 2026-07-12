@@ -1,12 +1,53 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { WORDS, type Word } from "@/data/words";
+
+const LEARNED_KEY = "shabd-arena-learned-v1";
+
+function loadLearned(): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(LEARNED_KEY);
+    return raw ? (JSON.parse(raw) as number[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLearned(ids: number[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LEARNED_KEY, JSON.stringify(ids));
+  } catch {
+    /* ignore */
+  }
+}
+
+function dayIndex(): number {
+  const now = new Date();
+  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+  const diff = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start;
+  return Math.floor(diff / 86400000);
+}
+
+function getDailyWords(all: Word[], count = 6): Word[] {
+  if (all.length === 0) return [];
+  const seed = dayIndex();
+  const picks: Word[] = [];
+  const n = all.length;
+  for (let i = 0; i < Math.min(count, n); i++) {
+    picks.push(all[(seed * 7 + i * 13) % n]);
+  }
+  // dedupe while preserving order
+  const seen = new Set<number>();
+  return picks.filter((w) => (seen.has(w.id) ? false : (seen.add(w.id), true)));
+}
 
 export const Route = createFileRoute("/")({
   component: Arena,
 });
 
-type Mode = "home" | "flash" | "quiz";
+type Mode = "home" | "flash" | "quiz" | "revise";
 type QuizKind = "synonym" | "antonym" | "meaning";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -20,14 +61,47 @@ function shuffle<T>(arr: T[]): T[] {
 
 function Arena() {
   const [mode, setMode] = useState<Mode>("home");
+  const [learned, setLearned] = useState<number[]>([]);
+
+  useEffect(() => {
+    setLearned(loadLearned());
+  }, []);
+
+  function markLearned(id: number) {
+    setLearned((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      saveLearned(next);
+      return next;
+    });
+  }
+
+  function removeLearned(id: number) {
+    setLearned((prev) => {
+      const next = prev.filter((x) => x !== id);
+      saveLearned(next);
+      return next;
+    });
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground bg-grid">
       <Header />
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-        {mode === "home" && <Home onStart={setMode} />}
-        {mode === "flash" && <Flashcards onExit={() => setMode("home")} />}
+        {mode === "home" && (
+          <Home onStart={setMode} learnedCount={learned.length} />
+        )}
+        {mode === "flash" && (
+          <Flashcards onExit={() => setMode("home")} onLearn={markLearned} />
+        )}
         {mode === "quiz" && <Quiz onExit={() => setMode("home")} />}
+        {mode === "revise" && (
+          <Revise
+            onExit={() => setMode("home")}
+            learnedIds={learned}
+            onRemove={removeLearned}
+          />
+        )}
       </main>
       <Footer />
     </div>
@@ -62,14 +136,21 @@ function Header() {
 function Footer() {
   return (
     <footer className="mt-16 border-brutal border-t-[3px] bg-[var(--cool)] py-6 text-center text-sm font-medium text-white">
-      Padho, khelo, top karo. Made with 💥 for aspirants.
+      Padho, khelo, top karo. Made by Hitansh jain 💥
     </footer>
   );
 }
 
 /* ============================== HOME ============================== */
 
-function Home({ onStart }: { onStart: (m: Mode) => void }) {
+function Home({
+  onStart,
+  learnedCount,
+}: {
+  onStart: (m: Mode) => void;
+  learnedCount: number;
+}) {
+  const dailyWords = useMemo(() => getDailyWords(WORDS, 6), []);
   return (
     <div className="space-y-10">
       {/* Hero */}
@@ -103,6 +184,12 @@ function Home({ onStart }: { onStart: (m: Mode) => void }) {
             >
               ⚔️ Quiz Battle
             </button>
+            <button
+              onClick={() => onStart("revise")}
+              className="w-full rounded-2xl border-brutal bg-[var(--mint)] px-6 py-3 text-base font-extrabold shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
+            >
+              📚 Revise ({learnedCount})
+            </button>
           </div>
         </div>
       </section>
@@ -129,18 +216,23 @@ function Home({ onStart }: { onStart: (m: Mode) => void }) {
         />
       </section>
 
-      {/* Word pack preview */}
+      {/* Daily word pack — refreshes every 24 hours */}
       <section>
-        <div className="mb-4 flex items-end justify-between">
-          <h3 className="text-2xl font-extrabold sm:text-3xl">
-            Aaj ka word pack 📦
-          </h3>
-          <span className="text-sm text-muted-foreground">
-            {WORDS.length} words loaded
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h3 className="text-2xl font-extrabold sm:text-3xl">
+              Aaj ka word pack 📦
+            </h3>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              🔁 Daily refresh • Naye words in <CountdownToMidnight />
+            </p>
+          </div>
+          <span className="rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm">
+            {dailyWords.length} of {WORDS.length}
           </span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {WORDS.slice(0, 6).map((w) => (
+          {dailyWords.map((w) => (
             <div
               key={w.id}
               className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm transition-transform hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
@@ -159,6 +251,25 @@ function Home({ onStart }: { onStart: (m: Mode) => void }) {
       </section>
     </div>
   );
+}
+
+function CountdownToMidnight() {
+  const [text, setText] = useState("24h");
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 0, 0);
+      const ms = next.getTime() - now.getTime();
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      setText(`${h}h ${m}m`);
+    }
+    tick();
+    const id = window.setInterval(tick, 30000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <span>{text}</span>;
 }
 
 function FeatureCard({
@@ -185,7 +296,13 @@ function FeatureCard({
 
 /* ============================ FLASHCARDS ============================ */
 
-function Flashcards({ onExit }: { onExit: () => void }) {
+function Flashcards({
+  onExit,
+  onLearn,
+}: {
+  onExit: () => void;
+  onLearn: (id: number) => void;
+}) {
   const [deck] = useState<Word[]>(() => shuffle(WORDS));
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -195,7 +312,10 @@ function Flashcards({ onExit }: { onExit: () => void }) {
   const progress = ((i + 1) / deck.length) * 100;
 
   function next(mark: "know" | "revise") {
-    if (mark === "know") setKnown((s) => new Set(s).add(w.id));
+    if (mark === "know") {
+      setKnown((s) => new Set(s).add(w.id));
+      onLearn(w.id);
+    }
     setFlipped(false);
     setI((n) => (n + 1) % deck.length);
   }
@@ -622,3 +742,80 @@ function TopBar({
     </div>
   );
 }
+
+/* ============================== REVISE ============================== */
+
+function Revise({
+  onExit,
+  learnedIds,
+  onRemove,
+}: {
+  onExit: () => void;
+  learnedIds: number[];
+  onRemove: (id: number) => void;
+}) {
+  const learnedWords = useMemo(
+    () =>
+      learnedIds
+        .map((id) => WORDS.find((w) => w.id === id))
+        .filter((w): w is Word => Boolean(w)),
+    [learnedIds],
+  );
+
+  return (
+    <div className="space-y-6">
+      <TopBar
+        title="Revise Zone"
+        subtitle={`${learnedWords.length} learned word${learnedWords.length === 1 ? "" : "s"} • Dohrao aur pakka karo`}
+        onExit={onExit}
+      />
+
+      {learnedWords.length === 0 ? (
+        <div className="rounded-3xl border-brutal bg-card p-8 text-center shadow-brutal-lg">
+          <div className="text-6xl">📭</div>
+          <h3 className="mt-4 font-display text-2xl font-extrabold">
+            Abhi tak koi word learn nahi kiya
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Flashcards mein "✅ Aata hai" dabao, wo words yahan revise ke liye
+            aa jayenge.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {learnedWords.map((w) => (
+            <div
+              key={w.id}
+              className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-display text-xl font-extrabold">
+                    {w.word}
+                  </p>
+                  <p className="font-mono text-[10px] text-muted-foreground">
+                    /{w.pronounce}/
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  {w.pos}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{w.english}</p>
+              <p className="mt-1 text-sm font-semibold">{w.hindi}</p>
+              <p className="mt-1 text-sm italic opacity-80">{w.hinglish}</p>
+              <p className="mt-2 text-xs italic">"{w.example}"</p>
+              <button
+                onClick={() => onRemove(w.id)}
+                className="mt-3 rounded-xl border-brutal bg-[var(--hot)] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm"
+              >
+                ↺ Learn again
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
