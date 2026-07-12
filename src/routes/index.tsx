@@ -296,7 +296,13 @@ function FeatureCard({
 
 /* ============================ FLASHCARDS ============================ */
 
-function Flashcards({ onExit }: { onExit: () => void }) {
+function Flashcards({
+  onExit,
+  onLearn,
+}: {
+  onExit: () => void;
+  onLearn: (id: number) => void;
+}) {
   const [deck] = useState<Word[]>(() => shuffle(WORDS));
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -306,7 +312,10 @@ function Flashcards({ onExit }: { onExit: () => void }) {
   const progress = ((i + 1) / deck.length) * 100;
 
   function next(mark: "know" | "revise") {
-    if (mark === "know") setKnown((s) => new Set(s).add(w.id));
+    if (mark === "know") {
+      setKnown((s) => new Set(s).add(w.id));
+      onLearn(w.id);
+    }
     setFlipped(false);
     setI((n) => (n + 1) % deck.length);
   }
