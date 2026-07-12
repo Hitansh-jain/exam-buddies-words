@@ -190,9 +190,6 @@ function Home({
             >
               📚 Revise ({learnedCount})
             </button>
-            >
-              ⚔️ Quiz Battle
-            </button>
           </div>
         </div>
       </section>
