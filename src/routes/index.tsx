@@ -136,7 +136,7 @@ function Header() {
 function Footer() {
   return (
     <footer className="mt-16 border-brutal border-t-[3px] bg-[var(--cool)] py-6 text-center text-sm font-medium text-white">
-      Padho, khelo, top karo. Made with 💥 for aspirants.
+      Padho, khelo, top karo. Made by Hitansh jain 💥
     </footer>
   );
 }
