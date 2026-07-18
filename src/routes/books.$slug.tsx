@@ -1,6 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { findBook, type Book, type Chapter } from "@/data/books";
+import { useEffect, useMemo, useState } from "react";
+import {
+  findBook,
+  type Book,
+  type Chapter,
+  extractStoryFromCollection,
+  getSiblingTitles,
+} from "@/data/books";
 import { EbookReader } from "@/components/EbookReader";
 
 export const Route = createFileRoute("/books/$slug")({
@@ -21,10 +27,25 @@ export const Route = createFileRoute("/books/$slug")({
   component: BookReaderPage,
 });
 
+// Simple in-memory cache so switching stories in the same collection is instant.
+const rawCache = new Map<number, string>();
+
 function BookReaderPage() {
   const { book } = Route.useLoaderData() as { book: Book };
   const [chapterId, setChapterId] = useState<string>(book.chapters[0]?.id ?? "");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const chapter = book.chapters.find((c) => c.id === chapterId) ?? book.chapters[0];
+
+  // Group chapters by their `group` field for a clean picker.
+  const groups = useMemo(() => {
+    const map = new Map<string, Chapter[]>();
+    for (const c of book.chapters) {
+      const g = c.group ?? "Chapters";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(c);
+    }
+    return Array.from(map.entries());
+  }, [book]);
 
   return (
     <div className="min-h-screen bg-background bg-grid">
@@ -53,28 +74,63 @@ function BookReaderPage() {
         )}
 
         {book.chapters.length > 1 && (
-          <div className="mb-5 flex flex-wrap gap-2">
-            {book.chapters.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setChapterId(c.id)}
-                className={`rounded-full border-brutal px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm ${
-                  c.id === chapterId ? `bg-[var(--${book.color})] ${book.color === "cool" || book.color === "hot" ? "text-white" : ""}` : "bg-card"
-                }`}
-              >
-                {c.title}
-              </button>
-            ))}
+          <div className="mb-5">
+            <button
+              onClick={() => setPickerOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border-brutal bg-card px-4 py-3 text-left shadow-brutal-sm transition-transform hover:-translate-y-0.5"
+            >
+              <span className="min-w-0">
+                <span className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {chapter.group ?? "Chapter"}
+                </span>
+                <span className="block truncate text-sm font-extrabold sm:text-base">
+                  {chapter.title}
+                </span>
+              </span>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-brutal bg-[var(--lemon)] text-sm font-extrabold shadow-brutal-sm">
+                {pickerOpen ? "▲" : "▼"}
+              </span>
+            </button>
+
+            {pickerOpen && (
+              <div className="mt-3 max-h-96 overflow-y-auto rounded-2xl border-brutal bg-card p-3 shadow-brutal-sm">
+                {groups.map(([g, list]) => (
+                  <div key={g} className="mb-3 last:mb-0">
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {g} · {list.length}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {list.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            setChapterId(c.id);
+                            setPickerOpen(false);
+                          }}
+                          className={`rounded-full border-brutal px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider shadow-brutal-sm transition-transform hover:-translate-y-0.5 ${
+                            c.id === chapterId
+                              ? `bg-[var(--${book.color})] ${book.color === "cool" || book.color === "hot" ? "text-white" : ""}`
+                              : "bg-background"
+                          }`}
+                        >
+                          {c.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        <ChapterView key={chapter.id} chapter={chapter} accent={book.color} />
+        <ChapterView key={chapter.id} book={book} chapter={chapter} accent={book.color} />
       </div>
     </div>
   );
 }
 
-function ChapterView({ chapter, accent }: { chapter: Chapter; accent: string }) {
+function ChapterView({ book, chapter, accent }: { book: Book; chapter: Chapter; accent: string }) {
   const [text, setText] = useState<string>(chapter.inlineText ?? "");
   const [loading, setLoading] = useState<boolean>(!chapter.inlineText);
   const [error, setError] = useState<string | null>(null);
@@ -90,14 +146,33 @@ function ChapterView({ chapter, accent }: { chapter: Chapter; accent: string }) 
     let cancelled = false;
     setLoading(true);
     setError(null);
+
+    const siblings = getSiblingTitles(book, chapter);
+    const isCollection = siblings.length > 1;
+
+    const process = (raw: string): string => {
+      const body = extractBody(raw);
+      if (isCollection) {
+        return extractStoryFromCollection(body, siblings, chapter.title);
+      }
+      return body;
+    };
+
+    const cached = rawCache.get(src.gutenbergId);
+    if (cached) {
+      setText(process(cached));
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const res = await fetch(`/api/public/gutenberg?id=${src.gutenbergId}`);
         if (!res.ok) throw new Error("Fetch failed");
         const raw = await res.text();
         if (cancelled) return;
-        const cleaned = extractBody(raw);
-        setText(cleaned);
+        rawCache.set(src.gutenbergId, raw);
+        setText(process(raw));
       } catch {
         if (!cancelled) setError("Couldn't load this chapter. Please try again.");
       } finally {
@@ -107,7 +182,7 @@ function ChapterView({ chapter, accent }: { chapter: Chapter; accent: string }) 
     return () => {
       cancelled = true;
     };
-  }, [chapter]);
+  }, [chapter, book]);
 
   if (loading) {
     return (
@@ -135,19 +210,14 @@ function ChapterView({ chapter, accent }: { chapter: Chapter; accent: string }) 
   return <EbookReader text={text} accent={accent} />;
 }
 
-// Strip the Project Gutenberg legal header/footer and normalize whitespace.
+// Strip the Project Gutenberg legal header/footer.
 function extractBody(raw: string): string {
   const startMarker = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
   const endMarker = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
   const s = raw.search(startMarker);
-  const e = raw.search(endMarker);
   let body = raw;
   if (s !== -1) body = body.slice(s).replace(startMarker, "");
-  if (e !== -1) {
-    const eIdx = body.search(endMarker);
-    if (eIdx !== -1) body = body.slice(0, eIdx);
-  }
-  // Collapse 3+ newlines to 2
-  body = body.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
-  return body;
+  const eIdx = body.search(endMarker);
+  if (eIdx !== -1) body = body.slice(0, eIdx);
+  return body.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
 }
