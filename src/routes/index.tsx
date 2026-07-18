@@ -263,26 +263,8 @@ function ExploreCard({
     </Link>
   );
 }
-  );
-}
 
-function CountdownToMidnight() {
-  const [text, setText] = useState("24h");
-  useEffect(() => {
-    function tick() {
-      const now = new Date();
-      const next = new Date(now);
-      next.setHours(24, 0, 0, 0);
-      const ms = next.getTime() - now.getTime();
-      const h = Math.floor(ms / 3600000);
-      const m = Math.floor((ms % 3600000) / 60000);
-      setText(`${h}h ${m}m`);
-    }
-    tick();
-    const id = window.setInterval(tick, 30000);
-    return () => window.clearInterval(id);
-  }, []);
-  return <span>{text}</span>;
+
 }
 
 function FeatureCard({
