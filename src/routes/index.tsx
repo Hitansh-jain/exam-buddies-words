@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { WORDS, type Word } from "@/data/words";
 
@@ -23,25 +23,8 @@ function saveLearned(ids: number[]) {
   }
 }
 
-function dayIndex(): number {
-  const now = new Date();
-  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
-  const diff = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start;
-  return Math.floor(diff / 86400000);
-}
 
-function getDailyWords(all: Word[], count = 6): Word[] {
-  if (all.length === 0) return [];
-  const seed = dayIndex();
-  const picks: Word[] = [];
-  const n = all.length;
-  for (let i = 0; i < Math.min(count, n); i++) {
-    picks.push(all[(seed * 7 + i * 13) % n]);
-  }
-  // dedupe while preserving order
-  const seen = new Set<number>();
-  return picks.filter((w) => (seen.has(w.id) ? false : (seen.add(w.id), true)));
-}
+
 
 export const Route = createFileRoute("/")({
   component: Arena,
