@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BOOKS } from "@/data/books";
 
-export const Route = createFileRoute("/books/" as any)({
+export const Route = createFileRoute("/books/")({
   head: () => ({
     meta: [
       { title: "Books — Shabd Arena" },
