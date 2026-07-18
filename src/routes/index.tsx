@@ -133,7 +133,6 @@ function Home({
   onStart: (m: Mode) => void;
   learnedCount: number;
 }) {
-  const dailyWords = useMemo(() => getDailyWords(WORDS, 6), []);
   return (
     <div className="space-y-10">
       {/* Hero */}
@@ -199,40 +198,71 @@ function Home({
         />
       </section>
 
-      {/* Daily word pack — refreshes every 24 hours */}
+      {/* New: Explore more — Roots, Idioms, Books */}
       <section>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h3 className="text-2xl font-extrabold sm:text-3xl">
-              Aaj ka word pack 📦
-            </h3>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              🔁 Daily refresh • Naye words in <CountdownToMidnight />
-            </p>
-          </div>
-          <span className="rounded-full border-brutal bg-[var(--lemon)] px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-brutal-sm">
-            {dailyWords.length} of {WORDS.length}
-          </span>
+        <div className="mb-4">
+          <h3 className="text-2xl font-extrabold sm:text-3xl">
+            Aur bhi seekho 🚀
+          </h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Roots • Idioms • Full books with click-to-meaning
+          </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {dailyWords.map((w) => (
-            <div
-              key={w.id}
-              className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm transition-transform hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
-            >
-              <div className="flex items-baseline justify-between">
-                <p className="font-display text-xl font-extrabold">{w.word}</p>
-                <span className="rounded-full bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                  {w.pos}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">{w.english}</p>
-              <p className="mt-2 text-sm font-semibold">{w.hindi}</p>
-            </div>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ExploreCard
+            to="/roots"
+            bg="bg-[var(--cool)] text-white"
+            emoji="🧬"
+            title="Root Words"
+            text="Ek root, 10 words free — Latin & Greek DNA of English."
+          />
+          <ExploreCard
+            to="/idioms"
+            bg="bg-[var(--lemon)]"
+            emoji="🎭"
+            title="Idioms Black Book"
+            text="40+ exam-favourite idioms in Hindi + Hinglish."
+          />
+          <ExploreCard
+            to="/books"
+            bg="bg-[var(--mint)]"
+            emoji="📚"
+            title="Books Reader"
+            text="Sherlock Holmes + Rich Dad summary. Tap tough words."
+          />
         </div>
       </section>
     </div>
+  );
+}
+
+function ExploreCard({
+  to,
+  bg,
+  emoji,
+  title,
+  text,
+}: {
+  to: string;
+  bg: string;
+  emoji: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className={`block rounded-2xl border-brutal p-5 shadow-brutal transition-transform hover:-translate-y-0.5 ${bg}`}
+    >
+      <div className="text-3xl">{emoji}</div>
+      <h4 className="mt-2 text-lg font-extrabold">{title}</h4>
+      <p className="mt-1 text-sm opacity-90">{text}</p>
+      <span className="mt-3 inline-block text-xs font-extrabold uppercase tracking-wider">
+        Open →
+      </span>
+    </Link>
+  );
+}
   );
 }
 
