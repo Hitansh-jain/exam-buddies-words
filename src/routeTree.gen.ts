@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RootsRouteImport } from './routes/roots'
 import { Route as IdiomsRouteImport } from './routes/idioms'
-import { Route as BooksRouteImport } from './routes/books'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BooksIndexRouteImport } from './routes/books.index'
 import { Route as BooksSlugRouteImport } from './routes/books.$slug'
 import { Route as ApiPublicGutenbergRouteImport } from './routes/api/public/gutenberg'
 
@@ -26,20 +26,20 @@ const IdiomsRoute = IdiomsRouteImport.update({
   path: '/idioms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BooksRoute = BooksRouteImport.update({
-  id: '/books',
-  path: '/books',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BooksIndexRoute = BooksIndexRouteImport.update({
+  id: '/books/',
+  path: '/books/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BooksSlugRoute = BooksSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => BooksRoute,
+  id: '/books/$slug',
+  path: '/books/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicGutenbergRoute = ApiPublicGutenbergRouteImport.update({
   id: '/api/public/gutenberg',
@@ -49,61 +49,62 @@ const ApiPublicGutenbergRoute = ApiPublicGutenbergRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/books': typeof BooksRouteWithChildren
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
+  '/books/': typeof BooksIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/books': typeof BooksRouteWithChildren
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
+  '/books': typeof BooksIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/books': typeof BooksRouteWithChildren
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
+  '/books/': typeof BooksIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/books'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
+    | '/books/'
     | '/api/public/gutenberg'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/books'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
+    | '/books'
     | '/api/public/gutenberg'
   id:
     | '__root__'
     | '/'
-    | '/books'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
+    | '/books/'
     | '/api/public/gutenberg'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BooksRoute: typeof BooksRouteWithChildren
   IdiomsRoute: typeof IdiomsRoute
   RootsRoute: typeof RootsRoute
+  BooksSlugRoute: typeof BooksSlugRoute
+  BooksIndexRoute: typeof BooksIndexRoute
   ApiPublicGutenbergRoute: typeof ApiPublicGutenbergRoute
 }
 
@@ -123,13 +124,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdiomsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/books': {
-      id: '/books'
-      path: '/books'
-      fullPath: '/books'
-      preLoaderRoute: typeof BooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -137,12 +131,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/books/': {
+      id: '/books/'
+      path: '/books'
+      fullPath: '/books/'
+      preLoaderRoute: typeof BooksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/books/$slug': {
       id: '/books/$slug'
-      path: '/$slug'
+      path: '/books/$slug'
       fullPath: '/books/$slug'
       preLoaderRoute: typeof BooksSlugRouteImport
-      parentRoute: typeof BooksRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/gutenberg': {
       id: '/api/public/gutenberg'
@@ -154,21 +155,12 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface BooksRouteChildren {
-  BooksSlugRoute: typeof BooksSlugRoute
-}
-
-const BooksRouteChildren: BooksRouteChildren = {
-  BooksSlugRoute: BooksSlugRoute,
-}
-
-const BooksRouteWithChildren = BooksRoute._addFileChildren(BooksRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BooksRoute: BooksRouteWithChildren,
   IdiomsRoute: IdiomsRoute,
   RootsRoute: RootsRoute,
+  BooksSlugRoute: BooksSlugRoute,
+  BooksIndexRoute: BooksIndexRoute,
   ApiPublicGutenbergRoute: ApiPublicGutenbergRoute,
 }
 export const routeTree = rootRouteImport
