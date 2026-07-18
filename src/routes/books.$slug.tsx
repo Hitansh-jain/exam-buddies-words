@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { findBook, type Chapter } from "@/data/books";
+import { findBook, type Book, type Chapter } from "@/data/books";
 import { EbookReader } from "@/components/EbookReader";
 
 export const Route = createFileRoute("/books/$slug")({
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/books/$slug")({
 });
 
 function BookReaderPage() {
-  const { book } = Route.useLoaderData();
+  const { book } = Route.useLoaderData() as { book: Book };
   const [chapterId, setChapterId] = useState<string>(book.chapters[0]?.id ?? "");
   const chapter = book.chapters.find((c) => c.id === chapterId) ?? book.chapters[0];
 
