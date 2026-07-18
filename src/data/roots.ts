@@ -1,7 +1,7 @@
 export type Root = {
   id: number;
   root: string;
-  origin: "Latin" | "Greek" | "Old English" | "French";
+  origin: "Latin" | "Greek" | "Greek/Latin" | "Old English" | "French";
   meaning: string;
   hinglish: string; // funny memory hook
   examples: { word: string; meaning: string }[];
