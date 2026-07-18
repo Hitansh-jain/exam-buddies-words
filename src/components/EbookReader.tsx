@@ -52,6 +52,26 @@ function findSentence(fullText: string, index: number): string {
   return fullText.slice(start + 1, end).trim();
 }
 
+const PAGE_CHAR_TARGET = 6000; // ~2-3 mins of reading per page
+
+function paginate(text: string): string[] {
+  const paras = text.split(/\n\n+/);
+  const pages: string[] = [];
+  let buf: string[] = [];
+  let size = 0;
+  for (const p of paras) {
+    buf.push(p);
+    size += p.length + 2;
+    if (size >= PAGE_CHAR_TARGET) {
+      pages.push(buf.join("\n\n"));
+      buf = [];
+      size = 0;
+    }
+  }
+  if (buf.length) pages.push(buf.join("\n\n"));
+  return pages.length ? pages : [text];
+}
+
 export function EbookReader({
   text,
   accent,
@@ -60,16 +80,18 @@ export function EbookReader({
   accent: string; // e.g. "cool" | "mint" | "hot" | "lemon"
 }) {
   const [meaning, setMeaning] = useState<Meaning | null>(null);
+  const [page, setPage] = useState(0);
   const textRef = useRef(text);
   textRef.current = text;
 
-  // Build clickable tokens: split by whitespace, tag each token as clickable or not.
+  const pages = useMemo(() => paginate(text), [text]);
+  useEffect(() => setPage(0), [text]);
+  const currentPage = pages[Math.min(page, pages.length - 1)] ?? "";
+
   const tokens = useMemo(() => {
-    // Preserve paragraphs
-    return text.split(/\n\n+/).map((para, pi) => {
+    return currentPage.split(/\n\n+/).map((para, pi) => {
       const parts = para.split(/(\s+)/).map((part, i) => {
         if (/^\s+$/.test(part)) return { key: `${pi}-${i}-s`, kind: "space" as const, text: part };
-        // Strip punctuation around word for tough-check but keep display intact
         const stripped = part.replace(/^[^\w]+|[^\w]+$/g, "");
         const tough = isLikelyToughWord(stripped);
         return {
@@ -81,7 +103,7 @@ export function EbookReader({
       });
       return { key: `p-${pi}`, parts };
     });
-  }, [text]);
+  }, [currentPage]);
 
   async function handleClick(wordOnly: string) {
     if (!wordOnly) return;
