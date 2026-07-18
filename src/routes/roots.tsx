@@ -1,71 +1,77 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { ROOTS } from "@/data/roots";
 
 export const Route = createFileRoute("/roots")({
   head: () => ({
     meta: [
-      { title: "Root Words — Shabd Arena" },
-      { name: "description", content: "Learn Latin & Greek root words in a funny Hinglish way — unlock 100s of English words with 30 core roots." },
+      { title: "Root Words Flashcards — Shabd Arena" },
+      { name: "description", content: "Learn 400+ Latin & Greek root words with funny Hinglish hooks and example words — flashcard style." },
     ],
   }),
   component: RootsPage,
 });
 
+function shuffle<T>(arr: T[]) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function RootsPage() {
+  const [order, setOrder] = useState(() => ROOTS.map((_, i) => i));
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  const root = useMemo(() => ROOTS[order[idx]], [order, idx]);
+
+  const next = () => { setFlipped(false); setIdx((i) => (i + 1) % order.length); };
+  const prev = () => { setFlipped(false); setIdx((i) => (i - 1 + order.length) % order.length); };
+  const reshuffle = () => { setOrder(shuffle(ROOTS.map((_, i) => i))); setIdx(0); setFlipped(false); };
+
   return (
-    <div className="min-h-screen bg-background bg-grid">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
-              🧬 Word DNA
-            </p>
-            <h1 className="truncate font-display text-3xl font-extrabold sm:text-5xl">
-              Root Words
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-              Ek root — 10 words free. Latin aur Greek se aaye legends.
-            </p>
-          </div>
-          <Link
-            to="/"
-            className="shrink-0 rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
-          >
-            ← Home
-          </Link>
+    <div className="min-h-screen bg-cream p-4 sm:p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <Link to="/" className="brutal-btn bg-white text-black">← Home</Link>
+          <div className="font-black text-lg">🧬 Root DNA · {idx + 1} / {ROOTS.length}</div>
+          <button onClick={reshuffle} className="brutal-btn bg-electric text-black">🔀 Shuffle</button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {ROOTS.map((r) => (
-            <article
-              key={r.id}
-              className="rounded-3xl border-brutal bg-card p-5 shadow-brutal-sm transition-transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-                  {r.root}
-                </h2>
-                <span className="shrink-0 rounded-full border-brutal bg-[var(--cool)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                  {r.origin}
-                </span>
-              </div>
-              <p className="mt-1 text-sm font-semibold">= {r.meaning}</p>
-              <p className="mt-2 rounded-2xl border-brutal bg-[var(--lemon)] px-3 py-2 text-sm font-semibold">
-                💡 {r.hinglish}
-              </p>
-              <div className="mt-3 grid gap-2">
-                {r.examples.map((ex) => (
-                  <div
-                    key={ex.word}
-                    className="rounded-xl border-brutal bg-background p-2"
-                  >
-                    <p className="font-display text-base font-extrabold">{ex.word}</p>
-                    <p className="text-xs text-muted-foreground">{ex.meaning}</p>
-                  </div>
+        <div
+          onClick={() => setFlipped((f) => !f)}
+          className="brutal-card bg-white p-6 sm:p-10 min-h-[420px] cursor-pointer select-none"
+        >
+          {!flipped ? (
+            <div className="text-center">
+              <div className="text-xs font-bold uppercase tracking-widest text-black/60 mb-2">{root.origin} Root</div>
+              <div className="text-5xl sm:text-7xl font-black break-words">{root.root}-</div>
+              <div className="mt-4 text-2xl sm:text-3xl font-bold">= {root.meaning}</div>
+              <div className="mt-8 inline-block brutal-badge bg-hotpink text-white">Tap to flip</div>
+            </div>
+          ) : (
+            <div>
+              <div className="brutal-badge bg-black text-cream inline-block mb-3">Hinglish hook</div>
+              <p className="text-lg sm:text-xl font-semibold mb-6">{root.hinglish}</p>
+              <div className="brutal-badge bg-electric text-black inline-block mb-3">Example words</div>
+              <ul className="space-y-2">
+                {root.examples.map((ex) => (
+                  <li key={ex.word} className="flex flex-wrap gap-2 items-baseline">
+                    <span className="font-black text-lg break-words">{ex.word}</span>
+                    <span className="text-black/70">— {ex.meaning}</span>
+                  </li>
                 ))}
-              </div>
-            </article>
-          ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between gap-3 mt-6">
+          <button onClick={prev} className="brutal-btn bg-white text-black flex-1">← Prev</button>
+          <button onClick={next} className="brutal-btn bg-hotpink text-white flex-1">Next →</button>
         </div>
       </div>
     </div>
