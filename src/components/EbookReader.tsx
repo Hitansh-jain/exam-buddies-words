@@ -146,9 +146,16 @@ export function EbookReader({
   return (
     <div className="relative">
       <div className="rounded-3xl border-brutal bg-card p-4 shadow-brutal-lg sm:p-8">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
-          📖 Tap any highlighted word for meaning + root + usage
-        </p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
+            📖 Tap highlighted words
+          </p>
+          {pages.length > 1 && (
+            <span className="rounded-full border-brutal bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm">
+              Page {page + 1} / {pages.length}
+            </span>
+          )}
+        </div>
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed sm:text-base sm:leading-8">
           {tokens.map((para) => (
             <p key={para.key} className="mb-4">
@@ -172,6 +179,31 @@ export function EbookReader({
           ))}
         </div>
       </div>
+
+      {pages.length > 1 && (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => {
+              setPage((p) => Math.max(0, p - 1));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            disabled={page === 0}
+            className="rounded-2xl border-brutal bg-card px-4 py-3 text-sm font-extrabold shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm disabled:opacity-40 sm:text-base"
+          >
+            ← Prev page
+          </button>
+          <button
+            onClick={() => {
+              setPage((p) => Math.min(pages.length - 1, p + 1));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            disabled={page >= pages.length - 1}
+            className="rounded-2xl border-brutal bg-[var(--hot)] px-4 py-3 text-sm font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm disabled:opacity-40 sm:text-base"
+          >
+            Next page →
+          </button>
+        </div>
+      )}
 
       {meaning && (
         <MeaningPopup meaning={meaning} onClose={() => setMeaning(null)} />
