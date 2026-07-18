@@ -265,7 +265,6 @@ function ExploreCard({
 }
 
 
-}
 
 function FeatureCard({
   bg,
