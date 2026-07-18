@@ -52,6 +52,26 @@ function findSentence(fullText: string, index: number): string {
   return fullText.slice(start + 1, end).trim();
 }
 
+const PAGE_CHAR_TARGET = 6000; // ~2-3 mins of reading per page
+
+function paginate(text: string): string[] {
+  const paras = text.split(/\n\n+/);
+  const pages: string[] = [];
+  let buf: string[] = [];
+  let size = 0;
+  for (const p of paras) {
+    buf.push(p);
+    size += p.length + 2;
+    if (size >= PAGE_CHAR_TARGET) {
+      pages.push(buf.join("\n\n"));
+      buf = [];
+      size = 0;
+    }
+  }
+  if (buf.length) pages.push(buf.join("\n\n"));
+  return pages.length ? pages : [text];
+}
+
 export function EbookReader({
   text,
   accent,
@@ -60,16 +80,18 @@ export function EbookReader({
   accent: string; // e.g. "cool" | "mint" | "hot" | "lemon"
 }) {
   const [meaning, setMeaning] = useState<Meaning | null>(null);
+  const [page, setPage] = useState(0);
   const textRef = useRef(text);
   textRef.current = text;
 
-  // Build clickable tokens: split by whitespace, tag each token as clickable or not.
+  const pages = useMemo(() => paginate(text), [text]);
+  useEffect(() => setPage(0), [text]);
+  const currentPage = pages[Math.min(page, pages.length - 1)] ?? "";
+
   const tokens = useMemo(() => {
-    // Preserve paragraphs
-    return text.split(/\n\n+/).map((para, pi) => {
+    return currentPage.split(/\n\n+/).map((para, pi) => {
       const parts = para.split(/(\s+)/).map((part, i) => {
         if (/^\s+$/.test(part)) return { key: `${pi}-${i}-s`, kind: "space" as const, text: part };
-        // Strip punctuation around word for tough-check but keep display intact
         const stripped = part.replace(/^[^\w]+|[^\w]+$/g, "");
         const tough = isLikelyToughWord(stripped);
         return {
@@ -81,7 +103,7 @@ export function EbookReader({
       });
       return { key: `p-${pi}`, parts };
     });
-  }, [text]);
+  }, [currentPage]);
 
   async function handleClick(wordOnly: string) {
     if (!wordOnly) return;
@@ -124,9 +146,16 @@ export function EbookReader({
   return (
     <div className="relative">
       <div className="rounded-3xl border-brutal bg-card p-4 shadow-brutal-lg sm:p-8">
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
-          📖 Tap any highlighted word for meaning + root + usage
-        </p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
+            📖 Tap highlighted words
+          </p>
+          {pages.length > 1 && (
+            <span className="rounded-full border-brutal bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm">
+              Page {page + 1} / {pages.length}
+            </span>
+          )}
+        </div>
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed sm:text-base sm:leading-8">
           {tokens.map((para) => (
             <p key={para.key} className="mb-4">
@@ -150,6 +179,31 @@ export function EbookReader({
           ))}
         </div>
       </div>
+
+      {pages.length > 1 && (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => {
+              setPage((p) => Math.max(0, p - 1));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            disabled={page === 0}
+            className="rounded-2xl border-brutal bg-card px-4 py-3 text-sm font-extrabold shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm disabled:opacity-40 sm:text-base"
+          >
+            ← Prev page
+          </button>
+          <button
+            onClick={() => {
+              setPage((p) => Math.min(pages.length - 1, p + 1));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            disabled={page >= pages.length - 1}
+            className="rounded-2xl border-brutal bg-[var(--hot)] px-4 py-3 text-sm font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm disabled:opacity-40 sm:text-base"
+          >
+            Next page →
+          </button>
+        </div>
+      )}
 
       {meaning && (
         <MeaningPopup meaning={meaning} onClose={() => setMeaning(null)} />
