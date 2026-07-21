@@ -49,9 +49,10 @@ function BookmarksPage() {
           <div className="grid gap-3">
             {items.map((b) => {
               const book = findBook(b.bookSlug);
+              const isLine = b.paragraphIndex !== undefined && b.paragraphIndex >= 0;
               return (
                 <div
-                  key={`${b.bookSlug}-${b.chapterId}-${b.savedAt}`}
+                  key={`${b.bookSlug}-${b.chapterId}-${b.page}-${b.paragraphIndex ?? -1}-${b.savedAt}`}
                   className="rounded-2xl border-brutal bg-card p-4 shadow-brutal-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -62,7 +63,13 @@ function BookmarksPage() {
                       <p className="mt-1 truncate font-display text-lg font-extrabold">
                         {b.chapterTitle}
                       </p>
-                      <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {isLine && b.snippet && (
+                        <p className="mt-2 rounded-lg border-brutal bg-[var(--lemon)] p-2 text-xs italic shadow-brutal-sm line-clamp-2">
+                          "{b.snippet}"
+                        </p>
+                      )}
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {isLine ? "📍 Line bookmark · " : "📄 Page bookmark · "}
                         Page {b.page + 1} / {b.totalPages} · {new Date(b.savedAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -70,14 +77,18 @@ function BookmarksPage() {
                       <Link
                         to="/books/$slug"
                         params={{ slug: b.bookSlug }}
-                        search={{ chapter: b.chapterId, page: b.page }}
+                        search={
+                          isLine
+                            ? { chapter: b.chapterId, page: b.page, para: b.paragraphIndex }
+                            : { chapter: b.chapterId, page: b.page }
+                        }
                         className="rounded-xl border-brutal bg-[var(--hot)] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-brutal-sm"
                       >
                         Resume →
                       </Link>
                       <button
                         onClick={() => {
-                          removeBookmark(b.bookSlug, b.chapterId);
+                          removeBookmark(b.bookSlug, b.chapterId, b.page, b.paragraphIndex);
                           setItems(loadBookmarks());
                         }}
                         className="rounded-xl border-brutal bg-card px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm"
