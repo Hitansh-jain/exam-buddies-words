@@ -13,9 +13,9 @@ import { Route as RootsRouteImport } from './routes/roots'
 import { Route as IdiomsRouteImport } from './routes/idioms'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as MockIndexRouteImport } from './routes/mock.index'
+import { Route as MockIndexRouteImport } from './routes/mock/index'
 import { Route as BooksIndexRouteImport } from './routes/books.index'
-import { Route as MockIdRouteImport } from './routes/mock.$id'
+import { Route as MockIdRouteImport } from './routes/mock/$id'
 import { Route as BooksSlugRouteImport } from './routes/books.$slug'
 import { Route as ApiPublicGutenbergRouteImport } from './routes/api/public/gutenberg'
 
@@ -229,3 +229,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

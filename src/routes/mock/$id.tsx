@@ -6,6 +6,7 @@ import { IDIOMS } from "@/data/idioms";
 import { ACTIVE_PASSIVE, ONE_WORD } from "@/data/grammar";
 
 export const Route = createFileRoute("/mock/$id")({
+  loader: ({ params }) => ({ mockId: Number(params.id) || 1 }),
   head: ({ params }) => ({
     meta: [
       { title: `Mock #${params.id} — Shabd Arena` },
