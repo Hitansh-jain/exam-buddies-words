@@ -156,6 +156,7 @@ export function EbookReader({
   chapterId,
   chapterTitle,
   initialPage = 0,
+  initialParagraph,
 }: {
   text: string;
   accent: string;
@@ -164,10 +165,12 @@ export function EbookReader({
   chapterId: string;
   chapterTitle: string;
   initialPage?: number;
+  initialParagraph?: number;
 }) {
   const [meaning, setMeaning] = useState<Meaning | null>(null);
   const [page, setPage] = useState(initialPage);
-  const [bookmarked, setBookmarked] = useState(false);
+  const [pageBookmarked, setPageBookmarked] = useState(false);
+  const [paraBookmarks, setParaBookmarks] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
   const textRef = useRef(text);
   textRef.current = text;
@@ -176,11 +179,13 @@ export function EbookReader({
   useEffect(() => setPage(Math.min(initialPage, Math.max(0, paginate(text).length - 1))), [text, initialPage]);
 
   useEffect(() => {
-    const has = loadBookmarks().some(
+    const list = loadBookmarks().filter(
       (b) => b.bookSlug === bookSlug && b.chapterId === chapterId && b.page === page,
     );
-    setBookmarked(has);
+    setPageBookmarked(list.some((b) => b.paragraphIndex === undefined || b.paragraphIndex === -1));
+    setParaBookmarks(new Set(list.map((b) => b.paragraphIndex ?? -1).filter((n) => n >= 0)));
   }, [bookSlug, chapterId, page]);
+
 
   const currentPage = pages[Math.min(page, pages.length - 1)] ?? "";
 
