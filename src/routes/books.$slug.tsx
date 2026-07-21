@@ -47,6 +47,7 @@ function BookReaderPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const chapter = book.chapters.find((c) => c.id === chapterId) ?? book.chapters[0];
   const initialPage = chapterId === initialChapterId ? (search.page ?? 0) : 0;
+  const initialParagraph = chapterId === initialChapterId ? search.para : undefined;
 
   const groups = useMemo(() => {
     const map = new Map<string, Chapter[]>();
