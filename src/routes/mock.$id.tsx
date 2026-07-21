@@ -192,6 +192,14 @@ function MockPlayer() {
   const [score, setScore] = useState(0);
   const [correct, setCorrect] = useState(0);
 
+  // Reset when switching mocks
+  useEffect(() => {
+    setI(0);
+    setPicked(null);
+    setScore(0);
+    setCorrect(0);
+  }, [mockId]);
+
   const done = i >= questions.length;
   const q = questions[i];
 
@@ -230,7 +238,7 @@ function MockPlayer() {
                 to="/mock/$id"
                 params={{ id: String(mockId % 50 + 1) }}
                 className="rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal"
-                reloadDocument
+                
               >
                 Next Mock →
               </Link>
