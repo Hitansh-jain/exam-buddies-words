@@ -9,7 +9,13 @@ import {
 } from "@/data/books";
 import { EbookReader } from "@/components/EbookReader";
 
+type ReaderSearch = { chapter?: string; page?: number };
+
 export const Route = createFileRoute("/books/$slug")({
+  validateSearch: (raw: Record<string, unknown>): ReaderSearch => ({
+    chapter: typeof raw.chapter === "string" ? raw.chapter : undefined,
+    page: typeof raw.page === "number" ? raw.page : raw.page ? Number(raw.page) : undefined,
+  }),
   head: ({ params }) => {
     const book = findBook(params.slug);
     return {
@@ -27,16 +33,20 @@ export const Route = createFileRoute("/books/$slug")({
   component: BookReaderPage,
 });
 
-// Simple in-memory cache so switching stories in the same collection is instant.
 const rawCache = new Map<number, string>();
 
 function BookReaderPage() {
   const { book } = Route.useLoaderData() as { book: Book };
-  const [chapterId, setChapterId] = useState<string>(book.chapters[0]?.id ?? "");
+  const search = Route.useSearch();
+  const initialChapterId =
+    (search.chapter && book.chapters.find((c) => c.id === search.chapter)?.id) ??
+    book.chapters[0]?.id ??
+    "";
+  const [chapterId, setChapterId] = useState<string>(initialChapterId);
   const [pickerOpen, setPickerOpen] = useState(false);
   const chapter = book.chapters.find((c) => c.id === chapterId) ?? book.chapters[0];
+  const initialPage = chapterId === initialChapterId ? (search.page ?? 0) : 0;
 
-  // Group chapters by their `group` field for a clean picker.
   const groups = useMemo(() => {
     const map = new Map<string, Chapter[]>();
     for (const c of book.chapters) {
@@ -50,7 +60,7 @@ function BookReaderPage() {
   return (
     <div className="min-h-screen bg-background bg-grid">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:gap-3">
           <div className="min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
               {book.emoji} {book.author}
@@ -59,6 +69,12 @@ function BookReaderPage() {
               {book.title}
             </h1>
           </div>
+          <Link
+            to="/bookmarks"
+            className="shrink-0 rounded-xl border-brutal bg-[var(--lemon)] px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
+          >
+            🔖
+          </Link>
           <Link
             to="/books"
             className="shrink-0 rounded-xl border-brutal bg-card px-3 py-2 text-xs font-extrabold uppercase tracking-wider shadow-brutal-sm"
@@ -124,13 +140,29 @@ function BookReaderPage() {
           </div>
         )}
 
-        <ChapterView key={chapter.id} book={book} chapter={chapter} accent={book.color} />
+        <ChapterView
+          key={chapter.id}
+          book={book}
+          chapter={chapter}
+          accent={book.color}
+          initialPage={initialPage}
+        />
       </div>
     </div>
   );
 }
 
-function ChapterView({ book, chapter, accent }: { book: Book; chapter: Chapter; accent: string }) {
+function ChapterView({
+  book,
+  chapter,
+  accent,
+  initialPage,
+}: {
+  book: Book;
+  chapter: Chapter;
+  accent: string;
+  initialPage: number;
+}) {
   const [text, setText] = useState<string>(chapter.inlineText ?? "");
   const [loading, setLoading] = useState<boolean>(!chapter.inlineText);
   const [error, setError] = useState<string | null>(null);
@@ -152,9 +184,7 @@ function ChapterView({ book, chapter, accent }: { book: Book; chapter: Chapter; 
 
     const process = (raw: string): string => {
       const body = extractBody(raw);
-      if (isCollection) {
-        return extractStoryFromCollection(body, siblings, chapter.title);
-      }
+      if (isCollection) return extractStoryFromCollection(body, siblings, chapter.title);
       return body;
     };
 
@@ -207,10 +237,19 @@ function ChapterView({ book, chapter, accent }: { book: Book; chapter: Chapter; 
     );
   }
 
-  return <EbookReader text={text} accent={accent} />;
+  return (
+    <EbookReader
+      text={text}
+      accent={accent}
+      bookSlug={book.slug}
+      bookTitle={book.title}
+      chapterId={chapter.id}
+      chapterTitle={chapter.title}
+      initialPage={initialPage}
+    />
+  );
 }
 
-// Strip the Project Gutenberg legal header/footer.
 function extractBody(raw: string): string {
   const startMarker = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
   const endMarker = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
