@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { WORDS, type Word } from "@/data/words";
 import { ROOTS } from "@/data/roots";
 import { IDIOMS } from "@/data/idioms";
