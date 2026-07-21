@@ -109,6 +109,8 @@ export type Bookmark = {
   bookTitle: string;
   page: number;
   totalPages: number;
+  paragraphIndex?: number;
+  snippet?: string;
   savedAt: number;
 };
 export function loadBookmarks(): Bookmark[] {
@@ -120,19 +122,29 @@ export function loadBookmarks(): Bookmark[] {
     return [];
   }
 }
+function bmKey(b: { bookSlug: string; chapterId: string; page: number; paragraphIndex?: number }) {
+  return `${b.bookSlug}::${b.chapterId}::${b.page}::${b.paragraphIndex ?? -1}`;
+}
 export function saveBookmark(bm: Bookmark) {
   if (typeof window === "undefined") return;
-  const all = loadBookmarks().filter(
-    (b) => !(b.bookSlug === bm.bookSlug && b.chapterId === bm.chapterId),
-  );
+  const k = bmKey(bm);
+  const all = loadBookmarks().filter((b) => bmKey(b) !== k);
   all.unshift(bm);
-  window.localStorage.setItem(BM_KEY, JSON.stringify(all.slice(0, 100)));
+  window.localStorage.setItem(BM_KEY, JSON.stringify(all.slice(0, 200)));
 }
-export function removeBookmark(bookSlug: string, chapterId: string) {
+export function removeBookmark(
+  bookSlug: string,
+  chapterId: string,
+  page?: number,
+  paragraphIndex?: number,
+) {
   if (typeof window === "undefined") return;
-  const all = loadBookmarks().filter(
-    (b) => !(b.bookSlug === bookSlug && b.chapterId === chapterId),
-  );
+  const all = loadBookmarks().filter((b) => {
+    if (b.bookSlug !== bookSlug || b.chapterId !== chapterId) return true;
+    if (page !== undefined && b.page !== page) return true;
+    if (paragraphIndex !== undefined && (b.paragraphIndex ?? -1) !== paragraphIndex) return true;
+    return false;
+  });
   window.localStorage.setItem(BM_KEY, JSON.stringify(all));
 }
 
