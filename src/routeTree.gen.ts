@@ -10,10 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RootsRouteImport } from './routes/roots'
-import { Route as MockRouteImport } from './routes/mock'
 import { Route as IdiomsRouteImport } from './routes/idioms'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MockIndexRouteImport } from './routes/mock.index'
 import { Route as BooksIndexRouteImport } from './routes/books.index'
 import { Route as MockIdRouteImport } from './routes/mock.$id'
 import { Route as BooksSlugRouteImport } from './routes/books.$slug'
@@ -22,11 +22,6 @@ import { Route as ApiPublicGutenbergRouteImport } from './routes/api/public/gute
 const RootsRoute = RootsRouteImport.update({
   id: '/roots',
   path: '/roots',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MockRoute = MockRouteImport.update({
-  id: '/mock',
-  path: '/mock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdiomsRoute = IdiomsRouteImport.update({
@@ -44,15 +39,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MockIndexRoute = MockIndexRouteImport.update({
+  id: '/mock/',
+  path: '/mock/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BooksIndexRoute = BooksIndexRouteImport.update({
   id: '/books/',
   path: '/books/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MockIdRoute = MockIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => MockRoute,
+  id: '/mock/$id',
+  path: '/mock/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BooksSlugRoute = BooksSlugRouteImport.update({
   id: '/books/$slug',
@@ -69,22 +69,22 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
   '/idioms': typeof IdiomsRoute
-  '/mock': typeof MockRouteWithChildren
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
   '/mock/$id': typeof MockIdRoute
   '/books/': typeof BooksIndexRoute
+  '/mock/': typeof MockIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
   '/idioms': typeof IdiomsRoute
-  '/mock': typeof MockRouteWithChildren
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
   '/mock/$id': typeof MockIdRoute
   '/books': typeof BooksIndexRoute
+  '/mock': typeof MockIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRoutesById {
@@ -92,11 +92,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
   '/idioms': typeof IdiomsRoute
-  '/mock': typeof MockRouteWithChildren
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
   '/mock/$id': typeof MockIdRoute
   '/books/': typeof BooksIndexRoute
+  '/mock/': typeof MockIndexRoute
   '/api/public/gutenberg': typeof ApiPublicGutenbergRoute
 }
 export interface FileRouteTypes {
@@ -105,33 +105,33 @@ export interface FileRouteTypes {
     | '/'
     | '/bookmarks'
     | '/idioms'
-    | '/mock'
     | '/roots'
     | '/books/$slug'
     | '/mock/$id'
     | '/books/'
+    | '/mock/'
     | '/api/public/gutenberg'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/bookmarks'
     | '/idioms'
-    | '/mock'
     | '/roots'
     | '/books/$slug'
     | '/mock/$id'
     | '/books'
+    | '/mock'
     | '/api/public/gutenberg'
   id:
     | '__root__'
     | '/'
     | '/bookmarks'
     | '/idioms'
-    | '/mock'
     | '/roots'
     | '/books/$slug'
     | '/mock/$id'
     | '/books/'
+    | '/mock/'
     | '/api/public/gutenberg'
   fileRoutesById: FileRoutesById
 }
@@ -139,10 +139,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookmarksRoute: typeof BookmarksRoute
   IdiomsRoute: typeof IdiomsRoute
-  MockRoute: typeof MockRouteWithChildren
   RootsRoute: typeof RootsRoute
   BooksSlugRoute: typeof BooksSlugRoute
+  MockIdRoute: typeof MockIdRoute
   BooksIndexRoute: typeof BooksIndexRoute
+  MockIndexRoute: typeof MockIndexRoute
   ApiPublicGutenbergRoute: typeof ApiPublicGutenbergRoute
 }
 
@@ -153,13 +154,6 @@ declare module '@tanstack/react-router' {
       path: '/roots'
       fullPath: '/roots'
       preLoaderRoute: typeof RootsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mock': {
-      id: '/mock'
-      path: '/mock'
-      fullPath: '/mock'
-      preLoaderRoute: typeof MockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/idioms': {
@@ -183,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mock/': {
+      id: '/mock/'
+      path: '/mock'
+      fullPath: '/mock/'
+      preLoaderRoute: typeof MockIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/books/': {
       id: '/books/'
       path: '/books'
@@ -192,10 +193,10 @@ declare module '@tanstack/react-router' {
     }
     '/mock/$id': {
       id: '/mock/$id'
-      path: '/$id'
+      path: '/mock/$id'
       fullPath: '/mock/$id'
       preLoaderRoute: typeof MockIdRouteImport
-      parentRoute: typeof MockRoute
+      parentRoute: typeof rootRouteImport
     }
     '/books/$slug': {
       id: '/books/$slug'
@@ -214,24 +215,15 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface MockRouteChildren {
-  MockIdRoute: typeof MockIdRoute
-}
-
-const MockRouteChildren: MockRouteChildren = {
-  MockIdRoute: MockIdRoute,
-}
-
-const MockRouteWithChildren = MockRoute._addFileChildren(MockRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookmarksRoute: BookmarksRoute,
   IdiomsRoute: IdiomsRoute,
-  MockRoute: MockRouteWithChildren,
   RootsRoute: RootsRoute,
   BooksSlugRoute: BooksSlugRoute,
+  MockIdRoute: MockIdRoute,
   BooksIndexRoute: BooksIndexRoute,
+  MockIndexRoute: MockIndexRoute,
   ApiPublicGutenbergRoute: ApiPublicGutenbergRoute,
 }
 export const routeTree = rootRouteImport
