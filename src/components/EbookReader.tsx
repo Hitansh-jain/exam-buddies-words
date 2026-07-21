@@ -9,11 +9,13 @@ type Meaning = {
   pos?: string;
   definition?: string;
   example?: string;
+  hindi?: string;
+  hindiLoading?: boolean;
+  hinglishFun?: string;
   root?: { rootLabel: string; meaning: string } | null;
-  usedInStory?: string; // sentence from the text where the word was clicked
+  usedInStory?: string;
 };
 
-// dictionaryapi.dev is a free, no-key public dictionary API.
 async function lookupWord(word: string): Promise<Partial<Meaning>> {
   const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
   const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`;
@@ -27,11 +29,38 @@ async function lookupWord(word: string): Promise<Partial<Meaning>> {
   }>;
   const first = data?.[0]?.meanings?.[0];
   const def = first?.definitions?.[0];
-  return {
-    pos: first?.partOfSpeech,
-    definition: def?.definition,
-    example: def?.example,
-  };
+  return { pos: first?.partOfSpeech, definition: def?.definition, example: def?.example };
+}
+
+// MyMemory free translation (no key). Best-effort — falls back gracefully.
+async function lookupHindi(word: string): Promise<string | null> {
+  try {
+    const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|hi`,
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { responseData?: { translatedText?: string } };
+    const t = data?.responseData?.translatedText?.trim();
+    return t && t.toLowerCase() !== clean ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+const HING_EMOS = ["😅", "🔥", "💯", "😎", "💥", "🎯", "✨", "😤"];
+function funnyHinglish(word: string, def?: string): string {
+  const w = word.toLowerCase();
+  const emo = HING_EMOS[w.length % HING_EMOS.length];
+  const short = def ? def.split(/[.,;:]/)[0].toLowerCase() : "";
+  const bits = [
+    `Bhai ne itna ${w} scene banaya ki full ${short || "vibes"} activate ${emo}`,
+    `Jab dost bole "${w}?" — samajh lo ${short || "kuch bada"} hone wala hai ${emo}`,
+    `Reels dekh dekh ke aajkal sab ${w} ho gaye hain — ${short || "trend"} on top ${emo}`,
+    `Mummy bolti "beta ${w} mat ho" — matlab ${short || "chill maar"} ${emo}`,
+    `Padosi uncle ka ${w} level next hai — ${short || "pure comedy"} ${emo}`,
+  ];
+  return bits[w.length % bits.length];
 }
 
 function findSentence(fullText: string, index: number): string {
@@ -52,8 +81,7 @@ function findSentence(fullText: string, index: number): string {
   return fullText.slice(start + 1, end).trim();
 }
 
-const PAGE_CHAR_TARGET = 6000; // ~2-3 mins of reading per page
-
+const PAGE_CHAR_TARGET = 6000;
 function paginate(text: string): string[] {
   const paras = text.split(/\n\n+/);
   const pages: string[] = [];
@@ -72,20 +100,76 @@ function paginate(text: string): string[] {
   return pages.length ? pages : [text];
 }
 
+/* ─── Bookmarks (localStorage) ─── */
+const BM_KEY = "shabd-arena-bookmarks-v1";
+export type Bookmark = {
+  bookSlug: string;
+  chapterId: string;
+  chapterTitle: string;
+  bookTitle: string;
+  page: number;
+  totalPages: number;
+  savedAt: number;
+};
+export function loadBookmarks(): Bookmark[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(BM_KEY);
+    return raw ? (JSON.parse(raw) as Bookmark[]) : [];
+  } catch {
+    return [];
+  }
+}
+export function saveBookmark(bm: Bookmark) {
+  if (typeof window === "undefined") return;
+  const all = loadBookmarks().filter(
+    (b) => !(b.bookSlug === bm.bookSlug && b.chapterId === bm.chapterId),
+  );
+  all.unshift(bm);
+  window.localStorage.setItem(BM_KEY, JSON.stringify(all.slice(0, 100)));
+}
+export function removeBookmark(bookSlug: string, chapterId: string) {
+  if (typeof window === "undefined") return;
+  const all = loadBookmarks().filter(
+    (b) => !(b.bookSlug === bookSlug && b.chapterId === chapterId),
+  );
+  window.localStorage.setItem(BM_KEY, JSON.stringify(all));
+}
+
 export function EbookReader({
   text,
   accent,
+  bookSlug,
+  bookTitle,
+  chapterId,
+  chapterTitle,
+  initialPage = 0,
 }: {
   text: string;
-  accent: string; // e.g. "cool" | "mint" | "hot" | "lemon"
+  accent: string;
+  bookSlug: string;
+  bookTitle: string;
+  chapterId: string;
+  chapterTitle: string;
+  initialPage?: number;
 }) {
   const [meaning, setMeaning] = useState<Meaning | null>(null);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(initialPage);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const textRef = useRef(text);
   textRef.current = text;
 
   const pages = useMemo(() => paginate(text), [text]);
-  useEffect(() => setPage(0), [text]);
+  useEffect(() => setPage(Math.min(initialPage, Math.max(0, paginate(text).length - 1))), [text, initialPage]);
+
+  useEffect(() => {
+    const has = loadBookmarks().some(
+      (b) => b.bookSlug === bookSlug && b.chapterId === chapterId && b.page === page,
+    );
+    setBookmarked(has);
+  }, [bookSlug, chapterId, page]);
+
   const currentPage = pages[Math.min(page, pages.length - 1)] ?? "";
 
   const tokens = useMemo(() => {
@@ -107,15 +191,16 @@ export function EbookReader({
 
   async function handleClick(wordOnly: string) {
     if (!wordOnly) return;
-    // Find first occurrence in text (good enough context grab)
     const idx = textRef.current.toLowerCase().indexOf(wordOnly.toLowerCase());
     const sentence = idx >= 0 ? findSentence(textRef.current, idx) : "";
     const root = findRootFor(wordOnly);
-    setMeaning({ word: wordOnly, loading: true, root, usedInStory: sentence });
+    setMeaning({ word: wordOnly, loading: true, hindiLoading: true, root, usedInStory: sentence });
     try {
       const res = await lookupWord(wordOnly);
       setMeaning((prev) =>
-        prev && prev.word === wordOnly ? { ...prev, loading: false, ...res } : prev,
+        prev && prev.word === wordOnly
+          ? { ...prev, loading: false, ...res, hinglishFun: funnyHinglish(wordOnly, res.definition) }
+          : prev,
       );
     } catch {
       setMeaning((prev) =>
@@ -124,6 +209,31 @@ export function EbookReader({
           : prev,
       );
     }
+    const hi = await lookupHindi(wordOnly);
+    setMeaning((prev) =>
+      prev && prev.word === wordOnly ? { ...prev, hindi: hi ?? undefined, hindiLoading: false } : prev,
+    );
+  }
+
+  function toggleBookmark() {
+    if (bookmarked) {
+      removeBookmark(bookSlug, chapterId);
+      setBookmarked(false);
+      setToast("Bookmark hataya");
+    } else {
+      saveBookmark({
+        bookSlug,
+        chapterId,
+        chapterTitle,
+        bookTitle,
+        page,
+        totalPages: pages.length,
+        savedAt: Date.now(),
+      });
+      setBookmarked(true);
+      setToast("Bookmark saved ✅");
+    }
+    setTimeout(() => setToast(null), 1600);
   }
 
   useEffect(() => {
@@ -146,15 +256,26 @@ export function EbookReader({
   return (
     <div className="relative">
       <div className="rounded-3xl border-brutal bg-card p-4 shadow-brutal-lg sm:p-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">
             📖 Tap highlighted words
           </p>
-          {pages.length > 1 && (
-            <span className="rounded-full border-brutal bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm">
-              Page {page + 1} / {pages.length}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {pages.length > 1 && (
+              <span className="rounded-full border-brutal bg-[var(--lemon)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm">
+                Page {page + 1} / {pages.length}
+              </span>
+            )}
+            <button
+              onClick={toggleBookmark}
+              className={`rounded-full border-brutal px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm ${
+                bookmarked ? "bg-[var(--hot)] text-white" : "bg-card"
+              }`}
+              title="Save your position"
+            >
+              {bookmarked ? "🔖 Saved" : "➕ Add bookmark"}
+            </button>
+          </div>
         </div>
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed sm:text-base sm:leading-8">
           {tokens.map((para) => (
@@ -205,9 +326,13 @@ export function EbookReader({
         </div>
       )}
 
-      {meaning && (
-        <MeaningPopup meaning={meaning} onClose={() => setMeaning(null)} />
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full border-brutal bg-foreground px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-background shadow-brutal-sm">
+          {toast}
+        </div>
       )}
+
+      {meaning && <MeaningPopup meaning={meaning} onClose={() => setMeaning(null)} />}
     </div>
   );
 }
@@ -220,7 +345,7 @@ function MeaningPopup({ meaning, onClose }: { meaning: Meaning; onClose: () => v
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg animate-pop rounded-3xl border-brutal bg-card p-5 shadow-brutal-lg sm:p-6"
+        className="max-h-[85vh] w-full max-w-lg animate-pop overflow-y-auto rounded-3xl border-brutal bg-card p-5 shadow-brutal-lg sm:p-6"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -256,12 +381,30 @@ function MeaningPopup({ meaning, onClose }: { meaning: Meaning; onClose: () => v
           {meaning.definition && (
             <div className="rounded-2xl border-brutal bg-[var(--mint)] p-3">
               <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-80">
-                Definition
+                🇬🇧 English
               </p>
               <p className="mt-1 text-sm font-semibold">{meaning.definition}</p>
               {meaning.example && (
                 <p className="mt-2 text-xs italic opacity-80">"{meaning.example}"</p>
               )}
+            </div>
+          )}
+          <div className="rounded-2xl border-brutal bg-[var(--lemon)] p-3">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-80">
+              🇮🇳 Hindi
+            </p>
+            <p className="mt-1 text-sm font-semibold">
+              {meaning.hindiLoading
+                ? "Translate ho raha hai…"
+                : meaning.hindi ?? "Hindi meaning available nahi (network/API)."}
+            </p>
+          </div>
+          {meaning.hinglishFun && (
+            <div className="rounded-2xl border-brutal bg-[var(--hot)] p-3 text-white">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-90">
+                😄 Hinglish (funny)
+              </p>
+              <p className="mt-1 text-sm font-semibold">{meaning.hinglishFun}</p>
             </div>
           )}
           {meaning.root && (

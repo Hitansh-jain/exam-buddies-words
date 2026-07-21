@@ -5,7 +5,7 @@ export const Route = createFileRoute("/books/")({
   head: () => ({
     meta: [
       { title: "Books — Shabd Arena" },
-      { name: "description", content: "Read Sherlock Holmes and Rich Dad Poor Dad key lessons — click any tough word for meaning, root and how it's used." },
+      { name: "description", content: "Read Sherlock Holmes (4 novels + 56 stories) — click any tough word for meaning, root and how it's used." },
     ],
   }),
   component: BooksIndex,
