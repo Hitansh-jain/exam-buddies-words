@@ -109,6 +109,8 @@ export type Bookmark = {
   bookTitle: string;
   page: number;
   totalPages: number;
+  paragraphIndex?: number;
+  snippet?: string;
   savedAt: number;
 };
 export function loadBookmarks(): Bookmark[] {
@@ -120,19 +122,29 @@ export function loadBookmarks(): Bookmark[] {
     return [];
   }
 }
+function bmKey(b: { bookSlug: string; chapterId: string; page: number; paragraphIndex?: number }) {
+  return `${b.bookSlug}::${b.chapterId}::${b.page}::${b.paragraphIndex ?? -1}`;
+}
 export function saveBookmark(bm: Bookmark) {
   if (typeof window === "undefined") return;
-  const all = loadBookmarks().filter(
-    (b) => !(b.bookSlug === bm.bookSlug && b.chapterId === bm.chapterId),
-  );
+  const k = bmKey(bm);
+  const all = loadBookmarks().filter((b) => bmKey(b) !== k);
   all.unshift(bm);
-  window.localStorage.setItem(BM_KEY, JSON.stringify(all.slice(0, 100)));
+  window.localStorage.setItem(BM_KEY, JSON.stringify(all.slice(0, 200)));
 }
-export function removeBookmark(bookSlug: string, chapterId: string) {
+export function removeBookmark(
+  bookSlug: string,
+  chapterId: string,
+  page?: number,
+  paragraphIndex?: number,
+) {
   if (typeof window === "undefined") return;
-  const all = loadBookmarks().filter(
-    (b) => !(b.bookSlug === bookSlug && b.chapterId === chapterId),
-  );
+  const all = loadBookmarks().filter((b) => {
+    if (b.bookSlug !== bookSlug || b.chapterId !== chapterId) return true;
+    if (page !== undefined && b.page !== page) return true;
+    if (paragraphIndex !== undefined && (b.paragraphIndex ?? -1) !== paragraphIndex) return true;
+    return false;
+  });
   window.localStorage.setItem(BM_KEY, JSON.stringify(all));
 }
 
@@ -144,6 +156,7 @@ export function EbookReader({
   chapterId,
   chapterTitle,
   initialPage = 0,
+  initialParagraph,
 }: {
   text: string;
   accent: string;
@@ -152,10 +165,12 @@ export function EbookReader({
   chapterId: string;
   chapterTitle: string;
   initialPage?: number;
+  initialParagraph?: number;
 }) {
   const [meaning, setMeaning] = useState<Meaning | null>(null);
   const [page, setPage] = useState(initialPage);
-  const [bookmarked, setBookmarked] = useState(false);
+  const [pageBookmarked, setPageBookmarked] = useState(false);
+  const [paraBookmarks, setParaBookmarks] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
   const textRef = useRef(text);
   textRef.current = text;
@@ -164,11 +179,13 @@ export function EbookReader({
   useEffect(() => setPage(Math.min(initialPage, Math.max(0, paginate(text).length - 1))), [text, initialPage]);
 
   useEffect(() => {
-    const has = loadBookmarks().some(
+    const list = loadBookmarks().filter(
       (b) => b.bookSlug === bookSlug && b.chapterId === chapterId && b.page === page,
     );
-    setBookmarked(has);
+    setPageBookmarked(list.some((b) => b.paragraphIndex === undefined || b.paragraphIndex === -1));
+    setParaBookmarks(new Set(list.map((b) => b.paragraphIndex ?? -1).filter((n) => n >= 0)));
   }, [bookSlug, chapterId, page]);
+
 
   const currentPage = pages[Math.min(page, pages.length - 1)] ?? "";
 
@@ -215,10 +232,10 @@ export function EbookReader({
     );
   }
 
-  function toggleBookmark() {
-    if (bookmarked) {
-      removeBookmark(bookSlug, chapterId);
-      setBookmarked(false);
+  function togglePageBookmark() {
+    if (pageBookmarked) {
+      removeBookmark(bookSlug, chapterId, page, -1);
+      setPageBookmarked(false);
       setToast("Bookmark hataya");
     } else {
       saveBookmark({
@@ -230,11 +247,53 @@ export function EbookReader({
         totalPages: pages.length,
         savedAt: Date.now(),
       });
-      setBookmarked(true);
-      setToast("Bookmark saved ✅");
+      setPageBookmarked(true);
+      setToast("Page bookmark saved ✅");
     }
     setTimeout(() => setToast(null), 1600);
   }
+
+  function toggleParaBookmark(paraIdx: number, snippet: string) {
+    if (paraBookmarks.has(paraIdx)) {
+      removeBookmark(bookSlug, chapterId, page, paraIdx);
+      const next = new Set(paraBookmarks);
+      next.delete(paraIdx);
+      setParaBookmarks(next);
+      setToast("Line bookmark hataya");
+    } else {
+      saveBookmark({
+        bookSlug,
+        chapterId,
+        chapterTitle,
+        bookTitle,
+        page,
+        totalPages: pages.length,
+        paragraphIndex: paraIdx,
+        snippet: snippet.slice(0, 140),
+        savedAt: Date.now(),
+      });
+      const next = new Set(paraBookmarks);
+      next.add(paraIdx);
+      setParaBookmarks(next);
+      setToast("Line bookmark saved ✅");
+    }
+    setTimeout(() => setToast(null), 1600);
+  }
+
+  // Scroll to requested paragraph after render
+  useEffect(() => {
+    if (initialParagraph === undefined || initialParagraph < 0) return;
+    const id = `para-${initialParagraph}`;
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-4", "ring-[var(--hot)]", "rounded-xl");
+        setTimeout(() => el.classList.remove("ring-4", "ring-[var(--hot)]", "rounded-xl"), 2400);
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [initialParagraph, page, tokens.length]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -267,37 +326,60 @@ export function EbookReader({
               </span>
             )}
             <button
-              onClick={toggleBookmark}
+              onClick={togglePageBookmark}
               className={`rounded-full border-brutal px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm ${
-                bookmarked ? "bg-[var(--hot)] text-white" : "bg-card"
+                pageBookmarked ? "bg-[var(--hot)] text-white" : "bg-card"
               }`}
-              title="Save your position"
+              title="Save this page"
             >
-              {bookmarked ? "🔖 Saved" : "➕ Add bookmark"}
+              {pageBookmarked ? "🔖 Page saved" : "➕ Bookmark page"}
             </button>
           </div>
         </div>
+        <p className="mb-3 text-[11px] font-semibold text-muted-foreground">
+          💡 Tip: Kisi bhi line ke saamne 🔖 dabaao — waha se resume ho jayega.
+        </p>
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed sm:text-base sm:leading-8">
-          {tokens.map((para) => (
-            <p key={para.key} className="mb-4">
-              {para.parts.map((t) =>
-                t.kind === "space" ? (
-                  <span key={t.key}>{t.text}</span>
-                ) : t.kind === "tough" ? (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => handleClick(t.wordOnly!)}
-                    className={`cursor-pointer underline decoration-dotted decoration-2 underline-offset-4 hover:bg-[var(--lemon)] ${toughColor}`}
-                  >
-                    {t.text}
-                  </button>
-                ) : (
-                  <span key={t.key}>{t.text}</span>
-                ),
-              )}
-            </p>
-          ))}
+          {tokens.map((para, paraIdx) => {
+            const paraText = para.parts.map((p) => p.text).join("");
+            const isBm = paraBookmarks.has(paraIdx);
+            return (
+              <div
+                key={para.key}
+                id={`para-${paraIdx}`}
+                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--lemon)]/40"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleParaBookmark(paraIdx, paraText.trim())}
+                  className={`absolute -left-1 top-1 hidden shrink-0 rounded-md border-brutal px-1.5 py-0.5 text-[10px] font-extrabold shadow-brutal-sm group-hover:block sm:-left-8 sm:block sm:opacity-40 sm:hover:opacity-100 ${
+                    isBm ? "bg-[var(--hot)] text-white sm:opacity-100" : "bg-card"
+                  }`}
+                  title={isBm ? "Remove line bookmark" : "Bookmark this line"}
+                >
+                  🔖
+                </button>
+                <p>
+                  {para.parts.map((t) =>
+                    t.kind === "space" ? (
+                      <span key={t.key}>{t.text}</span>
+                    ) : t.kind === "tough" ? (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => handleClick(t.wordOnly!)}
+                        className={`cursor-pointer underline decoration-dotted decoration-2 underline-offset-4 hover:bg-[var(--lemon)] ${toughColor}`}
+                      >
+                        {t.text}
+                      </button>
+                    ) : (
+                      <span key={t.key}>{t.text}</span>
+                    ),
+                  )}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 

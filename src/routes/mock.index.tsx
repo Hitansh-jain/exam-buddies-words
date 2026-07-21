@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/mock")({
+export const Route = createFileRoute("/mock/")({
   head: () => ({
     meta: [
       { title: "50 Mock Tests — Shabd Arena" },

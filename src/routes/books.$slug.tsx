@@ -9,12 +9,13 @@ import {
 } from "@/data/books";
 import { EbookReader } from "@/components/EbookReader";
 
-type ReaderSearch = { chapter?: string; page?: number };
+type ReaderSearch = { chapter?: string; page?: number; para?: number };
 
 export const Route = createFileRoute("/books/$slug")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => ({
     chapter: typeof raw.chapter === "string" ? raw.chapter : undefined,
     page: typeof raw.page === "number" ? raw.page : raw.page ? Number(raw.page) : undefined,
+    para: typeof raw.para === "number" ? raw.para : raw.para ? Number(raw.para) : undefined,
   }),
   head: ({ params }) => {
     const book = findBook(params.slug);
@@ -46,6 +47,7 @@ function BookReaderPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const chapter = book.chapters.find((c) => c.id === chapterId) ?? book.chapters[0];
   const initialPage = chapterId === initialChapterId ? (search.page ?? 0) : 0;
+  const initialParagraph = chapterId === initialChapterId ? search.para : undefined;
 
   const groups = useMemo(() => {
     const map = new Map<string, Chapter[]>();
@@ -146,6 +148,7 @@ function BookReaderPage() {
           chapter={chapter}
           accent={book.color}
           initialPage={initialPage}
+          initialParagraph={initialParagraph}
         />
       </div>
     </div>
@@ -157,11 +160,13 @@ function ChapterView({
   chapter,
   accent,
   initialPage,
+  initialParagraph,
 }: {
   book: Book;
   chapter: Chapter;
   accent: string;
   initialPage: number;
+  initialParagraph?: number;
 }) {
   const [text, setText] = useState<string>(chapter.inlineText ?? "");
   const [loading, setLoading] = useState<boolean>(!chapter.inlineText);
@@ -246,6 +251,7 @@ function ChapterView({
       chapterId={chapter.id}
       chapterTitle={chapter.title}
       initialPage={initialPage}
+      initialParagraph={initialParagraph}
     />
   );
 }
