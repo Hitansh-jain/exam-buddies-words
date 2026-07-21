@@ -9,12 +9,13 @@ import {
 } from "@/data/books";
 import { EbookReader } from "@/components/EbookReader";
 
-type ReaderSearch = { chapter?: string; page?: number };
+type ReaderSearch = { chapter?: string; page?: number; para?: number };
 
 export const Route = createFileRoute("/books/$slug")({
   validateSearch: (raw: Record<string, unknown>): ReaderSearch => ({
     chapter: typeof raw.chapter === "string" ? raw.chapter : undefined,
     page: typeof raw.page === "number" ? raw.page : raw.page ? Number(raw.page) : undefined,
+    para: typeof raw.para === "number" ? raw.para : raw.para ? Number(raw.para) : undefined,
   }),
   head: ({ params }) => {
     const book = findBook(params.slug);
