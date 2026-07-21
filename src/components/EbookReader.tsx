@@ -232,10 +232,10 @@ export function EbookReader({
     );
   }
 
-  function toggleBookmark() {
-    if (bookmarked) {
-      removeBookmark(bookSlug, chapterId);
-      setBookmarked(false);
+  function togglePageBookmark() {
+    if (pageBookmarked) {
+      removeBookmark(bookSlug, chapterId, page, -1);
+      setPageBookmarked(false);
       setToast("Bookmark hataya");
     } else {
       saveBookmark({
@@ -247,11 +247,53 @@ export function EbookReader({
         totalPages: pages.length,
         savedAt: Date.now(),
       });
-      setBookmarked(true);
-      setToast("Bookmark saved ✅");
+      setPageBookmarked(true);
+      setToast("Page bookmark saved ✅");
     }
     setTimeout(() => setToast(null), 1600);
   }
+
+  function toggleParaBookmark(paraIdx: number, snippet: string) {
+    if (paraBookmarks.has(paraIdx)) {
+      removeBookmark(bookSlug, chapterId, page, paraIdx);
+      const next = new Set(paraBookmarks);
+      next.delete(paraIdx);
+      setParaBookmarks(next);
+      setToast("Line bookmark hataya");
+    } else {
+      saveBookmark({
+        bookSlug,
+        chapterId,
+        chapterTitle,
+        bookTitle,
+        page,
+        totalPages: pages.length,
+        paragraphIndex: paraIdx,
+        snippet: snippet.slice(0, 140),
+        savedAt: Date.now(),
+      });
+      const next = new Set(paraBookmarks);
+      next.add(paraIdx);
+      setParaBookmarks(next);
+      setToast("Line bookmark saved ✅");
+    }
+    setTimeout(() => setToast(null), 1600);
+  }
+
+  // Scroll to requested paragraph after render
+  useEffect(() => {
+    if (initialParagraph === undefined || initialParagraph < 0) return;
+    const id = `para-${initialParagraph}`;
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-4", "ring-[var(--hot)]", "rounded-xl");
+        setTimeout(() => el.classList.remove("ring-4", "ring-[var(--hot)]", "rounded-xl"), 2400);
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [initialParagraph, page, tokens.length]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
