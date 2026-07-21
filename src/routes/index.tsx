@@ -160,12 +160,12 @@ function Home({
             >
               🎴 Flashcard Mode
             </button>
-            <button
-              onClick={() => onStart("quiz")}
-              className="w-full rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
+            <Link
+              to="/mock"
+              className="w-full rounded-2xl border-brutal bg-[var(--cool)] px-6 py-3 text-center text-base font-extrabold text-white shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
             >
-              ⚔️ Quiz Battle
-            </button>
+              ⚔️ 50 Mock Tests
+            </Link>
             <button
               onClick={() => onStart("revise")}
               className="w-full rounded-2xl border-brutal bg-[var(--mint)] px-6 py-3 text-base font-extrabold shadow-brutal transition-transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-brutal-sm sm:w-auto"
@@ -208,27 +208,34 @@ function Home({
             Roots • Idioms • Full books with click-to-meaning
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ExploreCard
             to="/roots"
             bg="bg-[var(--cool)] text-white"
             emoji="🧬"
             title="Root Words"
-            text="Ek root, 10 words free — Latin & Greek DNA of English."
+            text="400+ Latin & Greek roots — DNA of English."
           />
           <ExploreCard
             to="/idioms"
             bg="bg-[var(--lemon)]"
             emoji="🎭"
             title="Idioms Black Book"
-            text="40+ exam-favourite idioms in Hindi + Hinglish."
+            text="570+ exam idioms in Hindi + Hinglish."
           />
           <ExploreCard
             to="/books"
             bg="bg-[var(--mint)]"
             emoji="📚"
-            title="Books Reader"
-            text="Sherlock Holmes + Rich Dad summary. Tap tough words."
+            title="Sherlock Reader"
+            text="4 novels + 56 stories. Tap tough words for meaning."
+          />
+          <ExploreCard
+            to="/bookmarks"
+            bg="bg-[var(--hot)] text-white"
+            emoji="🔖"
+            title="My Bookmarks"
+            text="Jaha chhoda tha wahin se resume karo."
           />
         </div>
       </section>
