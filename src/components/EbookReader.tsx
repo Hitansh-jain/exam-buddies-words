@@ -326,37 +326,60 @@ export function EbookReader({
               </span>
             )}
             <button
-              onClick={toggleBookmark}
+              onClick={togglePageBookmark}
               className={`rounded-full border-brutal px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-brutal-sm ${
-                bookmarked ? "bg-[var(--hot)] text-white" : "bg-card"
+                pageBookmarked ? "bg-[var(--hot)] text-white" : "bg-card"
               }`}
-              title="Save your position"
+              title="Save this page"
             >
-              {bookmarked ? "🔖 Saved" : "➕ Add bookmark"}
+              {pageBookmarked ? "🔖 Page saved" : "➕ Bookmark page"}
             </button>
           </div>
         </div>
+        <p className="mb-3 text-[11px] font-semibold text-muted-foreground">
+          💡 Tip: Kisi bhi line ke saamne 🔖 dabaao — waha se resume ho jayega.
+        </p>
         <div className="prose prose-neutral max-w-none text-[15px] leading-relaxed sm:text-base sm:leading-8">
-          {tokens.map((para) => (
-            <p key={para.key} className="mb-4">
-              {para.parts.map((t) =>
-                t.kind === "space" ? (
-                  <span key={t.key}>{t.text}</span>
-                ) : t.kind === "tough" ? (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => handleClick(t.wordOnly!)}
-                    className={`cursor-pointer underline decoration-dotted decoration-2 underline-offset-4 hover:bg-[var(--lemon)] ${toughColor}`}
-                  >
-                    {t.text}
-                  </button>
-                ) : (
-                  <span key={t.key}>{t.text}</span>
-                ),
-              )}
-            </p>
-          ))}
+          {tokens.map((para, paraIdx) => {
+            const paraText = para.parts.map((p) => p.text).join("");
+            const isBm = paraBookmarks.has(paraIdx);
+            return (
+              <div
+                key={para.key}
+                id={`para-${paraIdx}`}
+                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--lemon)]/40"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleParaBookmark(paraIdx, paraText.trim())}
+                  className={`absolute -left-1 top-1 hidden shrink-0 rounded-md border-brutal px-1.5 py-0.5 text-[10px] font-extrabold shadow-brutal-sm group-hover:block sm:-left-8 sm:block sm:opacity-40 sm:hover:opacity-100 ${
+                    isBm ? "bg-[var(--hot)] text-white sm:opacity-100" : "bg-card"
+                  }`}
+                  title={isBm ? "Remove line bookmark" : "Bookmark this line"}
+                >
+                  🔖
+                </button>
+                <p>
+                  {para.parts.map((t) =>
+                    t.kind === "space" ? (
+                      <span key={t.key}>{t.text}</span>
+                    ) : t.kind === "tough" ? (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => handleClick(t.wordOnly!)}
+                        className={`cursor-pointer underline decoration-dotted decoration-2 underline-offset-4 hover:bg-[var(--lemon)] ${toughColor}`}
+                      >
+                        {t.text}
+                      </button>
+                    ) : (
+                      <span key={t.key}>{t.text}</span>
+                    ),
+                  )}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
