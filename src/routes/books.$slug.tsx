@@ -148,6 +148,7 @@ function BookReaderPage() {
           chapter={chapter}
           accent={book.color}
           initialPage={initialPage}
+          initialParagraph={initialParagraph}
         />
       </div>
     </div>
@@ -159,11 +160,13 @@ function ChapterView({
   chapter,
   accent,
   initialPage,
+  initialParagraph,
 }: {
   book: Book;
   chapter: Chapter;
   accent: string;
   initialPage: number;
+  initialParagraph?: number;
 }) {
   const [text, setText] = useState<string>(chapter.inlineText ?? "");
   const [loading, setLoading] = useState<boolean>(!chapter.inlineText);
