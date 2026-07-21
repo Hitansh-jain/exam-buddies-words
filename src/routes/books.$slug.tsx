@@ -251,6 +251,7 @@ function ChapterView({
       chapterId={chapter.id}
       chapterTitle={chapter.title}
       initialPage={initialPage}
+      initialParagraph={initialParagraph}
     />
   );
 }
