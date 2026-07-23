@@ -405,7 +405,7 @@ export function EbookReader({
                 <button
                   type="button"
                   onClick={() => toggleParaBookmark(paraIdx, paraText.trim())}
-                  className={`absolute -left-1 top-1 hidden shrink-0 rounded-md border-brutal px-1.5 py-0.5 text-[10px] font-extrabold shadow-brutal-sm group-hover:block sm:-left-8 sm:block sm:opacity-40 sm:hover:opacity-100 ${
+                  className={`absolute right-1 top-1 shrink-0 rounded-md border-brutal px-2 py-1 text-[11px] font-extrabold shadow-brutal-sm sm:-left-8 sm:right-auto sm:top-1 sm:px-1.5 sm:py-0.5 sm:text-[10px] sm:opacity-40 sm:hover:opacity-100 ${
                     isBm ? "bg-[var(--hot)] text-white sm:opacity-100" : "bg-card"
                   }`}
                   title={isBm ? "Remove line bookmark" : "Bookmark this line"}
