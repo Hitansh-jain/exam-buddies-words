@@ -135,6 +135,57 @@ function Home({
 }) {
   return (
     <div className="space-y-10">
+      {/* Explore: Roots, Idioms, Sherlock, Bookmarks, Find */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h3 className="text-2xl font-extrabold sm:text-3xl">
+              Aur bhi seekho 🚀
+            </h3>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Roots • Idioms • Sherlock • Bookmarks • Find your word
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <ExploreCard
+            to="/roots"
+            bg="bg-[var(--cool)] text-white"
+            emoji="🧬"
+            title="Root Words"
+            text="400+ Latin & Greek roots — DNA of English."
+          />
+          <ExploreCard
+            to="/idioms"
+            bg="bg-[var(--lemon)]"
+            emoji="🎭"
+            title="Idioms Black Book"
+            text="570+ exam idioms in Hindi + Hinglish."
+          />
+          <ExploreCard
+            to="/books"
+            bg="bg-[var(--mint)]"
+            emoji="🕵️"
+            title="Sherlock Reader"
+            text="4 novels + 56 stories. Tap tough words for meaning."
+          />
+          <ExploreCard
+            to="/bookmarks"
+            bg="bg-[var(--hot)] text-white"
+            emoji="🔖"
+            title="My Bookmarks"
+            text="Jaha chhoda tha wahin se resume karo."
+          />
+          <ExploreCard
+            to="/find"
+            bg="bg-card"
+            emoji="🔎"
+            title="Find your Word"
+            text="Koi bhi word likho — English + Hindi + Hinglish matlab."
+          />
+        </div>
+      </section>
+
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border-brutal bg-card p-5 shadow-brutal-lg sm:p-10">
         <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[var(--hot)] opacity-90 sm:h-40 sm:w-40" />
@@ -196,48 +247,6 @@ function Home({
           title="Syn / Ant"
           text="Synonyms aur antonyms saath mein — do ke bhaav mein 4."
         />
-      </section>
-
-      {/* New: Explore more — Roots, Idioms, Books */}
-      <section>
-        <div className="mb-4">
-          <h3 className="text-2xl font-extrabold sm:text-3xl">
-            Aur bhi seekho 🚀
-          </h3>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Roots • Idioms • Full books with click-to-meaning
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <ExploreCard
-            to="/roots"
-            bg="bg-[var(--cool)] text-white"
-            emoji="🧬"
-            title="Root Words"
-            text="400+ Latin & Greek roots — DNA of English."
-          />
-          <ExploreCard
-            to="/idioms"
-            bg="bg-[var(--lemon)]"
-            emoji="🎭"
-            title="Idioms Black Book"
-            text="570+ exam idioms in Hindi + Hinglish."
-          />
-          <ExploreCard
-            to="/books"
-            bg="bg-[var(--mint)]"
-            emoji="📚"
-            title="Sherlock Reader"
-            text="4 novels + 56 stories. Tap tough words for meaning."
-          />
-          <ExploreCard
-            to="/bookmarks"
-            bg="bg-[var(--hot)] text-white"
-            emoji="🔖"
-            title="My Bookmarks"
-            text="Jaha chhoda tha wahin se resume karo."
-          />
-        </div>
       </section>
     </div>
   );
