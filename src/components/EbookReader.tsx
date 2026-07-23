@@ -400,7 +400,7 @@ export function EbookReader({
               <div
                 key={para.key}
                 id={`para-${paraIdx}`}
-                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--lemon)]/40"
+                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 pr-10 transition-colors hover:bg-[var(--lemon)]/40 sm:pr-2"
               >
                 <button
                   type="button"
