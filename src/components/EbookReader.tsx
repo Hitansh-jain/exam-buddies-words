@@ -267,23 +267,21 @@ export function EbookReader({
     const sentence = idx >= 0 ? findSentence(textRef.current, idx) : "";
     const root = findRootFor(wordOnly);
     setMeaning({ word: wordOnly, loading: true, hindiLoading: true, root, usedInStory: sentence });
-    try {
-      const res = await lookupWord(wordOnly);
-      setMeaning((prev) =>
-        prev && prev.word === wordOnly
-          ? { ...prev, loading: false, ...res, hinglishFun: funnyHinglish(wordOnly, res.definition) }
-          : prev,
-      );
-    } catch {
-      setMeaning((prev) =>
-        prev && prev.word === wordOnly
-          ? { ...prev, loading: false, error: "Network error. Try again." }
-          : prev,
-      );
-    }
-    const hi = await lookupHindi(wordOnly);
+    const [res, hi] = await Promise.all([
+      lookupWord(wordOnly).catch(() => ({ error: "Network error. Try again." } as Partial<Meaning>)),
+      lookupHindi(wordOnly),
+    ]);
     setMeaning((prev) =>
-      prev && prev.word === wordOnly ? { ...prev, hindi: hi ?? undefined, hindiLoading: false } : prev,
+      prev && prev.word === wordOnly
+        ? {
+            ...prev,
+            loading: false,
+            hindiLoading: false,
+            ...res,
+            hindi: hi ?? undefined,
+            hinglishFun: funnyHinglish(wordOnly, res.definition, hi ?? undefined),
+          }
+        : prev,
     );
   }
 
