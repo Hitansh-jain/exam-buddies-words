@@ -16,7 +16,7 @@ type Meaning = {
   usedInStory?: string;
 };
 
-async function lookupWord(word: string): Promise<Partial<Meaning>> {
+export async function lookupWord(word: string): Promise<Partial<Meaning>> {
   const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
   const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`;
   const res = await fetch(url);
