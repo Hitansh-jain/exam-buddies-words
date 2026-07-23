@@ -16,7 +16,7 @@ type Meaning = {
   usedInStory?: string;
 };
 
-async function lookupWord(word: string): Promise<Partial<Meaning>> {
+export async function lookupWord(word: string): Promise<Partial<Meaning>> {
   const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
   const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`;
   const res = await fetch(url);
@@ -32,35 +32,90 @@ async function lookupWord(word: string): Promise<Partial<Meaning>> {
   return { pos: first?.partOfSpeech, definition: def?.definition, example: def?.example };
 }
 
-// MyMemory free translation (no key). Best-effort — falls back gracefully.
-async function lookupHindi(word: string): Promise<string | null> {
+// Fast Hindi translation via Google translate public endpoint + localStorage cache.
+const HI_CACHE_KEY = "shabd-arena-hi-cache-v1";
+function readHiCache(): Record<string, string> {
+  if (typeof window === "undefined") return {};
   try {
-    const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
+    return JSON.parse(window.localStorage.getItem(HI_CACHE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function writeHiCache(word: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const c = readHiCache();
+    c[word] = value;
+    window.localStorage.setItem(HI_CACHE_KEY, JSON.stringify(c));
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function lookupHindi(word: string): Promise<string | null> {
+  const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
+  if (!clean) return null;
+  const cache = readHiCache();
+  if (cache[clean]) return cache[clean];
+
+  // Try Google translate first (fast + accurate)
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(clean)}`,
+    );
+    if (res.ok) {
+      const data = (await res.json()) as unknown[];
+      const arr = (data?.[0] as unknown[]) ?? [];
+      const parts = arr
+        .map((seg) => (Array.isArray(seg) ? String(seg[0] ?? "") : ""))
+        .join("")
+        .trim();
+      if (parts && parts.toLowerCase() !== clean) {
+        writeHiCache(clean, parts);
+        return parts;
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+
+  // Fallback: MyMemory
+  try {
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|hi`,
     );
     if (!res.ok) return null;
     const data = (await res.json()) as { responseData?: { translatedText?: string } };
     const t = data?.responseData?.translatedText?.trim();
-    return t && t.toLowerCase() !== clean ? t : null;
+    if (t && t.toLowerCase() !== clean) {
+      writeHiCache(clean, t);
+      return t;
+    }
   } catch {
-    return null;
+    /* ignore */
   }
+  return null;
 }
 
 const HING_EMOS = ["😅", "🔥", "💯", "😎", "💥", "🎯", "✨", "😤"];
-function funnyHinglish(word: string, def?: string): string {
+export function funnyHinglish(word: string, def?: string, hindi?: string): string {
   const w = word.toLowerCase();
   const emo = HING_EMOS[w.length % HING_EMOS.length];
-  const short = def ? def.split(/[.,;:]/)[0].toLowerCase() : "";
-  const bits = [
-    `Bhai ne itna ${w} scene banaya ki full ${short || "vibes"} activate ${emo}`,
-    `Jab dost bole "${w}?" — samajh lo ${short || "kuch bada"} hone wala hai ${emo}`,
-    `Reels dekh dekh ke aajkal sab ${w} ho gaye hain — ${short || "trend"} on top ${emo}`,
-    `Mummy bolti "beta ${w} mat ho" — matlab ${short || "chill maar"} ${emo}`,
-    `Padosi uncle ka ${w} level next hai — ${short || "pure comedy"} ${emo}`,
+  const shortDef = def ? def.split(/[.,;:]/)[0].trim().toLowerCase() : "";
+  const hi = hindi?.split(/[,;/]/)[0]?.trim();
+  const meaningPart = shortDef
+    ? `matlab "${shortDef}"`
+    : hi
+      ? `matlab "${hi}"`
+      : "matlab kuch khaas vibe";
+  const templates = [
+    `"${w}" ${meaningPart} — jaise: "Bhai tu toh pura ${w} nikla!" ${emo}`,
+    `Samjho aise: agar koi ${meaningPart}, toh bol sakte ho "wo ekdum ${w} hai" ${emo}`,
+    `Exam me "${w}" dikha? Yaad rakh — ${meaningPart}. Example: "Uska attitude bilkul ${w} tha." ${emo}`,
+    `Dost bola "${w}" — ${meaningPart}. Reply: "haan yaar, full ${w} mood." ${emo}`,
   ];
-  return bits[w.length % bits.length];
+  return templates[w.length % templates.length];
 }
 
 function findSentence(fullText: string, index: number): string {
@@ -212,23 +267,21 @@ export function EbookReader({
     const sentence = idx >= 0 ? findSentence(textRef.current, idx) : "";
     const root = findRootFor(wordOnly);
     setMeaning({ word: wordOnly, loading: true, hindiLoading: true, root, usedInStory: sentence });
-    try {
-      const res = await lookupWord(wordOnly);
-      setMeaning((prev) =>
-        prev && prev.word === wordOnly
-          ? { ...prev, loading: false, ...res, hinglishFun: funnyHinglish(wordOnly, res.definition) }
-          : prev,
-      );
-    } catch {
-      setMeaning((prev) =>
-        prev && prev.word === wordOnly
-          ? { ...prev, loading: false, error: "Network error. Try again." }
-          : prev,
-      );
-    }
-    const hi = await lookupHindi(wordOnly);
+    const [res, hi] = await Promise.all([
+      lookupWord(wordOnly).catch(() => ({ error: "Network error. Try again." } as Partial<Meaning>)),
+      lookupHindi(wordOnly),
+    ]);
     setMeaning((prev) =>
-      prev && prev.word === wordOnly ? { ...prev, hindi: hi ?? undefined, hindiLoading: false } : prev,
+      prev && prev.word === wordOnly
+        ? {
+            ...prev,
+            loading: false,
+            hindiLoading: false,
+            ...res,
+            hindi: hi ?? undefined,
+            hinglishFun: funnyHinglish(wordOnly, res.definition, hi ?? undefined),
+          }
+        : prev,
     );
   }
 
@@ -347,12 +400,12 @@ export function EbookReader({
               <div
                 key={para.key}
                 id={`para-${paraIdx}`}
-                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--lemon)]/40"
+                className="group relative mb-4 -mx-2 rounded-lg px-2 py-1 pr-10 transition-colors hover:bg-[var(--lemon)]/40 sm:pr-2"
               >
                 <button
                   type="button"
                   onClick={() => toggleParaBookmark(paraIdx, paraText.trim())}
-                  className={`absolute -left-1 top-1 hidden shrink-0 rounded-md border-brutal px-1.5 py-0.5 text-[10px] font-extrabold shadow-brutal-sm group-hover:block sm:-left-8 sm:block sm:opacity-40 sm:hover:opacity-100 ${
+                  className={`absolute right-1 top-1 shrink-0 rounded-md border-brutal px-2 py-1 text-[11px] font-extrabold shadow-brutal-sm sm:-left-8 sm:right-auto sm:top-1 sm:px-1.5 sm:py-0.5 sm:text-[10px] sm:opacity-40 sm:hover:opacity-100 ${
                     isBm ? "bg-[var(--hot)] text-white sm:opacity-100" : "bg-card"
                   }`}
                   title={isBm ? "Remove line bookmark" : "Bookmark this line"}
