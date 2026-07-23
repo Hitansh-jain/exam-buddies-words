@@ -32,35 +32,90 @@ async function lookupWord(word: string): Promise<Partial<Meaning>> {
   return { pos: first?.partOfSpeech, definition: def?.definition, example: def?.example };
 }
 
-// MyMemory free translation (no key). Best-effort — falls back gracefully.
-async function lookupHindi(word: string): Promise<string | null> {
+// Fast Hindi translation via Google translate public endpoint + localStorage cache.
+const HI_CACHE_KEY = "shabd-arena-hi-cache-v1";
+function readHiCache(): Record<string, string> {
+  if (typeof window === "undefined") return {};
   try {
-    const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
+    return JSON.parse(window.localStorage.getItem(HI_CACHE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function writeHiCache(word: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const c = readHiCache();
+    c[word] = value;
+    window.localStorage.setItem(HI_CACHE_KEY, JSON.stringify(c));
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function lookupHindi(word: string): Promise<string | null> {
+  const clean = word.toLowerCase().replace(/[^a-z-]/g, "");
+  if (!clean) return null;
+  const cache = readHiCache();
+  if (cache[clean]) return cache[clean];
+
+  // Try Google translate first (fast + accurate)
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(clean)}`,
+    );
+    if (res.ok) {
+      const data = (await res.json()) as unknown[];
+      const arr = (data?.[0] as unknown[]) ?? [];
+      const parts = arr
+        .map((seg) => (Array.isArray(seg) ? String(seg[0] ?? "") : ""))
+        .join("")
+        .trim();
+      if (parts && parts.toLowerCase() !== clean) {
+        writeHiCache(clean, parts);
+        return parts;
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+
+  // Fallback: MyMemory
+  try {
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|hi`,
     );
     if (!res.ok) return null;
     const data = (await res.json()) as { responseData?: { translatedText?: string } };
     const t = data?.responseData?.translatedText?.trim();
-    return t && t.toLowerCase() !== clean ? t : null;
+    if (t && t.toLowerCase() !== clean) {
+      writeHiCache(clean, t);
+      return t;
+    }
   } catch {
-    return null;
+    /* ignore */
   }
+  return null;
 }
 
 const HING_EMOS = ["😅", "🔥", "💯", "😎", "💥", "🎯", "✨", "😤"];
-function funnyHinglish(word: string, def?: string): string {
+export function funnyHinglish(word: string, def?: string, hindi?: string): string {
   const w = word.toLowerCase();
   const emo = HING_EMOS[w.length % HING_EMOS.length];
-  const short = def ? def.split(/[.,;:]/)[0].toLowerCase() : "";
-  const bits = [
-    `Bhai ne itna ${w} scene banaya ki full ${short || "vibes"} activate ${emo}`,
-    `Jab dost bole "${w}?" — samajh lo ${short || "kuch bada"} hone wala hai ${emo}`,
-    `Reels dekh dekh ke aajkal sab ${w} ho gaye hain — ${short || "trend"} on top ${emo}`,
-    `Mummy bolti "beta ${w} mat ho" — matlab ${short || "chill maar"} ${emo}`,
-    `Padosi uncle ka ${w} level next hai — ${short || "pure comedy"} ${emo}`,
+  const shortDef = def ? def.split(/[.,;:]/)[0].trim().toLowerCase() : "";
+  const hi = hindi?.split(/[,;/]/)[0]?.trim();
+  const meaningPart = shortDef
+    ? `matlab "${shortDef}"`
+    : hi
+      ? `matlab "${hi}"`
+      : "matlab kuch khaas vibe";
+  const templates = [
+    `"${w}" ${meaningPart} — jaise: "Bhai tu toh pura ${w} nikla!" ${emo}`,
+    `Samjho aise: agar koi ${meaningPart}, toh bol sakte ho "wo ekdum ${w} hai" ${emo}`,
+    `Exam me "${w}" dikha? Yaad rakh — ${meaningPart}. Example: "Uska attitude bilkul ${w} tha." ${emo}`,
+    `Dost bola "${w}" — ${meaningPart}. Reply: "haan yaar, full ${w} mood." ${emo}`,
   ];
-  return bits[w.length % bits.length];
+  return templates[w.length % templates.length];
 }
 
 function findSentence(fullText: string, index: number): string {
