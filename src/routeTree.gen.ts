@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RootsRouteImport } from './routes/roots'
 import { Route as IdiomsRouteImport } from './routes/idioms'
+import { Route as FindRouteImport } from './routes/find'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MockIndexRouteImport } from './routes/mock/index'
@@ -27,6 +28,11 @@ const RootsRoute = RootsRouteImport.update({
 const IdiomsRoute = IdiomsRouteImport.update({
   id: '/idioms',
   path: '/idioms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FindRoute = FindRouteImport.update({
+  id: '/find',
+  path: '/find',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookmarksRoute = BookmarksRouteImport.update({
@@ -68,6 +74,7 @@ const ApiPublicGutenbergRoute = ApiPublicGutenbergRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/find': typeof FindRoute
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/find': typeof FindRoute
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bookmarks': typeof BookmarksRoute
+  '/find': typeof FindRoute
   '/idioms': typeof IdiomsRoute
   '/roots': typeof RootsRoute
   '/books/$slug': typeof BooksSlugRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/bookmarks'
+    | '/find'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/bookmarks'
+    | '/find'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/bookmarks'
+    | '/find'
     | '/idioms'
     | '/roots'
     | '/books/$slug'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookmarksRoute: typeof BookmarksRoute
+  FindRoute: typeof FindRoute
   IdiomsRoute: typeof IdiomsRoute
   RootsRoute: typeof RootsRoute
   BooksSlugRoute: typeof BooksSlugRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/idioms'
       fullPath: '/idioms'
       preLoaderRoute: typeof IdiomsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/find': {
+      id: '/find'
+      path: '/find'
+      fullPath: '/find'
+      preLoaderRoute: typeof FindRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bookmarks': {
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookmarksRoute: BookmarksRoute,
+  FindRoute: FindRoute,
   IdiomsRoute: IdiomsRoute,
   RootsRoute: RootsRoute,
   BooksSlugRoute: BooksSlugRoute,
